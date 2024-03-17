@@ -293,9 +293,6 @@ function _map(ptr)
 	
 	-- The level is selected and the loading starts:
 	if _chameleon[0] == chamStates.LoadingStart then
-		ChangeResolution(864,486)
-		snRes(864, 31)
-		snRes(486, 32)
 		local ccnopera = ffi.cast("char*",0x41D4B6)
 		local ccnoperb = ffi.cast("char*",0x41D4CB)
 		for i=2,4 do 
@@ -346,7 +343,6 @@ function _map(ptr)
 		end
 	-- the loading, the game gets the assets:
 	elseif _chameleon[0] == chamStates.LoadingAssets then
-		MessageBox("x")
 		if fullname ~= "" then
 			map_folder(path,"TILES")
 			map_folder(path,"IMAGES")
