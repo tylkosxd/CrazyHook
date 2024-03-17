@@ -56,7 +56,7 @@ mdl_flags.SetFlagsMetatype("DrawFlags")
 _nResult = mdl_exev.nResult
 nRes = mdl_exev.nRes
 snRes = mdl_exev.snRes
-Game = mld_exev.Game
+Game = mdl_exev.Game
 _mResult = mdl_exev.mResult
 _hwnd = mdl_exev.Hwnd
 LoadBaseLevDefaults = mdl_exef._LoadBaseLevDefaults
