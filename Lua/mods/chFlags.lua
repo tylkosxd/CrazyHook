@@ -21,8 +21,22 @@ local _flags = {
         Timing          = 0x40,
         Watch           = 0x80,
         DebugRects      = 0x1000,
-        DebugRectsPlus  = 0x2000
-    } 
+        DebugRectsPlus  = 0x2000,
+		DebugText		= 0x4000,
+        LiveClock       = 0x8000 
+    },
+	PlaneFlags = {
+		Main = 1,
+		NoDraw = 2,
+        XWrap = 4,
+        YWrap = 8
+	},
+    SpecialFlags = {
+        StopElevator    = 1,
+        FireShot        = 0x40000,
+        IceShot         = 0x80000,
+        LightningShot   = 0x100000
+    }
 }
 
 _flags.SetFlagsMetatype = function(name)
