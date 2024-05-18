@@ -2,87 +2,96 @@
 ---------------------------------------------------------
 ----------------- CRAZY HOOK 1.4 UPDATE -----------------
 ------------- CREATED BY KUBUS_PL AND ZAX37 -------------
---------------- WITH CONTRIBUTION BY TSXD ---------------
+---------------------------------------------------------
+----------------- WITH TSXD'S TREATMENT -----------------
 ---------------------------------------------------------
 ---------------------------------------------------------
 
 version = 1450
 
 -- extension modules:
-ffi = require 'ffi'
-bit = require 'bit'
-local lfs = require 'lfs'
+ffi             = require 'ffi'
+bit             = require 'bit'
+local lfs       = require 'lfs'
 
--- execute these files:
-if not _DoOnceOnStart then
-	dofile 'mods\\chCdecl.lua'
-	dofile 'mods\\CrazyPatches.lua'
-	_DoOnceOnStart = true
-end
+-- declare C types and metatypes:
+dofile 'mods\\chCdecl.lua'
+dofile 'mods\\chMetaTypes.lua'
 
--- different CrazyHook modules:
-local mdl_enums = require 'mods.chEnums'
-local mdl_flags = require 'mods.chFlags'
-local mdl_exef = require 'mods.chExeFuns'
-local mdl_exev = require 'mods.chExeVars'
-local mdl_codes = require 'mods.chCodes'
-local mdl_drects = require 'mods.chDebugRects'
-local mdl_commandline = require 'mods.chCommandLine'
-local mdl_customs_window = require 'mods.chCustomLevelWindow'
+-- load CrazyHook modules:
+local mdls_path         = 'Assets.MODULES.'
+local mdl_enums         = require (mdls_path .. 'chEnums')
+local mdl_flags         = require (mdls_path .. 'chFlags')
+local mdl_codes         = require (mdls_path .. 'chCodes')
+local mdl_dbg_tools     = require (mdls_path .. 'chDbgTools')
+local mdl_cmd           = require (mdls_path .. 'chCommandLine')
+local mdl_cust_wnd      = require (mdls_path .. 'chCustomLevelWindow')
+local mdl_pals          = require (mdls_path .. 'chPalettes')
+local mdl_lclock        = require (mdls_path .. 'chLiveClock')
+local mdl_cust_map      = require (mdls_path .. 'chCustomMap')
+mdl_exef                = require (mdls_path .. 'chExeFuns')
+mdl_exev                = require (mdls_path .. 'chExeVars')
 
 -- bit module functions:
-OR = bit.bor
-AND = bit.band
-NOT = bit.bnot
-XOR = bit.bxor
-HEX = bit.tohex
+OR                  = bit.bor
+AND                 = bit.band
+NOT                 = bit.bnot
+XOR                 = bit.bxor
+HEX                 = bit.tohex
 
 -- various enums:
-GameType = mdl_enums.GameType
-TreasureType = mdl_enums.TreasureType
-Powerup = mdl_enums.Powerup
-ObjectType = mdl_enums.ObjectType
-DeathType = mdl_enums.DeathType
-chamStates = mdl_enums.Chameleon
-
--- flags and flags metatypes:
-InfosFlags = mdl_flags.InfosFlags
-Flags = mdl_flags.Flags
-DrawFlags = mdl_flags.DrawFlags
-mdl_flags.SetFlagsMetatype("Flags")
-mdl_flags.SetFlagsMetatype("DrawFlags")
+GameType            = mdl_enums.GameType
+TreasureType        = mdl_enums.TreasureType
+Powerup             = mdl_enums.Powerup
+ObjectType          = mdl_enums.ObjectType
+DeathType           = mdl_enums.DeathType
+TileType            = mdl_enums.TileType
+TileAttribute       = mdl_enums.TileAttribute
+PlayerInput         = mdl_enums.PlayerInput
+ImageFlags          = mdl_enums.ImageFlags
+chamStates          = mdl_enums.Chameleon
+_message            = mdl_enums.Message
 
 -- game vars:
-_nResult = mdl_exev.nResult
-nRes = mdl_exev.nRes
-snRes = mdl_exev.snRes
-Game = mdl_exev.Game
-_mResult = mdl_exev.mResult
-_hwnd = mdl_exev.Hwnd
-LoadBaseLevDefaults = mdl_exef._LoadBaseLevDefaults
-LevelBasedData = mdl_exev.LevelBasedData
-local SkipLogoMovies = mdl_exev.SkipLogoMovies
-local SkipTitleScreen = mdl_exev.SkipTitleScreen
-InfosDisplayState = mdl_exev.InfosDisplayState
-_chameleon = mdl_exev.Chameleon
+_nResult            = mdl_exev.nResult
+nRes                = mdl_exev.nRes
+snRes               = mdl_exev.snRes
+Game                = mdl_exev.Game
+_mResult            = mdl_exev.mResult
+_hwnd               = mdl_exev.Hwnd
+LevelBasedData      = mdl_exev.LevelBasedData
+InfosDisplay        = mdl_exev.InfosDisplay
+_chameleon          = mdl_exev.Chameleon
 
--- these two vars must stay for the compatibility with previous versions:
-_CurrentPowerup = mdl_exev.CurrentPowerup
-_PowerupTime = mdl_exev.PowerupTime
+-- these vars should stay for the compatibility with previous version(-s):
+_CurrentPowerup     = mdl_exev.CurrentPowerup
+_PowerupTime        = mdl_exev.PowerupTime
+_TeleportX          = mdl_exev.TeleportX
+_TeleportY          = mdl_exev.TeleportY
 
---objects tables:
-local _objects = {} -- id -> ObjectA*
-local _data = {} -- address -> data table
-local _names = {} -- address -> object name (ones from CreateObject)
-local Object = {} -- Object methods
+-- flags:
+InfosFlags          = mdl_flags.InfosFlags
+Flags               = mdl_flags.Flags
+DrawFlags           = mdl_flags.DrawFlags
+PlaneFlags          = mdl_flags.PlaneFlags
+SpecialFlags        = mdl_flags.SpecialFlags
 
---map-related vars:
-local fullname = ""
-local name = ""
-local path = ""
+-- the flags metatypes:
+mdl_flags.SetFlagsMetatype("Flags")
+mdl_flags.SetFlagsMetatype("DrawFlags")
+mdl_flags.SetFlagsMetatype("PlaneFlags")
+mdl_flags.SetFlagsMetatype("SpecialFlags")
+mdl_flags.SetFlagsMetatype("InfosFlags")
 
--- Get command line arguments:
-local cl_argv = mdl_commandline.Get()
+-- object methods:
+Object              = {}
+
+-- get command line args:
+local cl_argv       = mdl_cmd.Get()
+
+-- debug text table:
+debug_text          = {"Put whatever you want here by writing in your custom logic: ",
+                        "debug_text[0] = 'whatever'; debug_text[1] = 'whatever more'; etc" }
 
 --------------------------------------------------------------
 --------------------------------------------------------------
@@ -90,31 +99,40 @@ local cl_argv = mdl_commandline.Get()
 --------------------------------------------------------------
 --------------------------------------------------------------
 
-local _env = setmetatable({}, {__index = _G})
-local _menv = nil
-local _maplogics = {}
-local _maphits = {}
-local _mapattacks = {}
-local _mapinits = {}
+local _env          = setmetatable({}, {__index = _G})
+local _menv         = nil -- "main" environment
+local _maplogics    = {}
+--local _maphits      = {}
+--local _mapattacks   = {}
+--local _mapinits     = {}
 local _globallogics = {}
-setmetatable(_G, { __index = function(_, k) return GetBuiltinLogic(k) end })
+setmetatable(_G, { __index = function(_, key) return GetBuiltinLogic(key) end })
 
-local function _DirExists(filepath)
+function _DirExists(filepath)
 	return lfs.attributes(filepath, "mode") == "directory"
 end
 
-local function _FileExists(filepath)
-	return lfs.attributes(filepath, "mode") == "file"
+function _FileExists(filepath)
+	return lfs.attributes(filepath, "mode") == "file" and lfs.attributes(filepath, "mode") ~= "directory"
 end
 
-local function _GetObjectsAddress(object)
+function _TableContainsKey(tab, name)
+    for k,_ in pairs(tab) do
+        if k == name then
+            return true
+        end
+    end
+    return false
+end
+
+function _GetObjectsAddress(object)
 	return tonumber(ffi.cast("int", object))
 end
 
-local function GetCustomLogicName(object)
+function _GetLogicName(object)
 	local name = ffi.string(object._Name)
 	return name ~= "" and name
-			or _names[_GetObjectsAddress(object)]
+			or _objects_names[_GetObjectsAddress(object)]
 			or "<unnamed>"
 end
 
@@ -123,8 +141,8 @@ function _create(ptr)
 	object.MoveClawX, object.MoveClawY = 0, 0
 
 	_objects[object.ID] = object
-	if not _data[_GetObjectsAddress(object)] then 
-		_data[_GetObjectsAddress(object)] = {} 
+	if not _objects_data[_GetObjectsAddress(object)] then 
+		_objects_data[_GetObjectsAddress(object)] = {} 
 	end
 
 	mdl_exef._RegisterHitHandler(object, "CustomHit")
@@ -133,11 +151,14 @@ end
 
 function _logic(ptr)
 	local object = ffi.cast("ObjectA*", ptr)
-	assert(_data[_GetObjectsAddress(object)])
-	local name = GetCustomLogicName(object)
+	assert(_objects_data[_GetObjectsAddress(object)])
+	local name = _GetLogicName(object)
 	local logic = nil
-	if _globallogics[name] then logic = _globallogics[name]
-	else logic = _maplogics[name] end
+	if _globallogics[name] then 
+        logic = _globallogics[name]
+	else 
+        logic = _maplogics[name] 
+    end
 	if type(logic) == "function" then
 		logic(object)
 	else
@@ -148,7 +169,7 @@ end
 
 function _hit(ptr)
 	local object = ffi.cast("ObjectA*", ptr)
-	local hit = _env[GetCustomLogicName(object).."Hit"]
+	local hit = _env[_GetLogicName(object).."Hit"]
 	if type(hit) == "function" then
 		hit(object)
 	end
@@ -156,14 +177,14 @@ end
 
 function _attack(ptr)
 	local object = ffi.cast("ObjectA*", ptr)
-	local attack = _env[GetCustomLogicName(object).."Attack"]
+	local attack = _env[_GetLogicName(object).."Attack"]
 	if type(attack) == "function" then
 		attack(object)
 	end
 end
 
 function _init(object)
-	local init = _env[GetCustomLogicName(object).."Init"]
+	local init = _env[_GetLogicName(object).."Init"]
 	if type(init) == "function" then
 		init(object)
 	end
@@ -173,8 +194,8 @@ function _destroy(ptr)
 	do return end
 	local object = ffi.cast("ObjectA*", ptr)
 	_objects[object.ID] = nil
-	_data[_GetObjectsAddress(object)] = nil
-	_names[_GetObjectsAddress(object)] = nil
+	_objects_data[_GetObjectsAddress(object)] = nil
+	_objects_names[_GetObjectsAddress(object)] = nil
 end
 
 function _exception(ptr)
@@ -197,28 +218,11 @@ function _lua(fnName, ptr)
 	end
 end
 
-local function map_folder(mappath, folder)
-	if not _DirExists(mappath .. "\\" .. folder) then return end
-	local fn =	(folder == "IMAGES" or folder == "TILES") and MapImagesFolder or
-				folder == "SOUNDS" and MapSoundsFolder or
-				folder == "ANIS" and MapAnisFolder or
-				folder == "LEVEL" or
-				error("bad name passed to map_folder")
-	if folder=="LEVEL" then
-		local lf = LoadFolder(folder)
-		MapImagesFolder(lf,"LEVEL") MapSoundsFolder(lf,"LEVEL") MapAnisFolder(lf,"LEVEL")
-	elseif folder == "TILES" then fn(LoadFolder(folder), "")
-	else fn(LoadFolder(folder), "CUSTOM") end
-end
-
-local function ExecuteLogic(object)
-	object.Logic(object)
-end
-
-local function TNTFix(bool)
-    local noper = ffi.cast("char*",0x41D53D)
-    local noperb = ffi.cast("char*",0x41D538)
-    if (bool == true) then
+--[[
+local function TNTFix(b)
+    local noper = ffi.cast("char*", 0x41D53D)
+    local noperb = ffi.cast("char*", 0x41D538)
+    if b == true then
 	    noper[3] = 0x8A
 	    noper[4] = 0x13
 	    noperb[1] = 0xF4
@@ -230,35 +234,55 @@ local function TNTFix(bool)
 	    noperb[2] = 0x27
     end
 end
+]]
 
 function _TimeThings()
 	mdl_exef._TimeThings(_nResult)
 end
 
-local function _ll(logicspath, global)
+local function _lls(logicspath)
+    if _DirExists(logicspath) then
+        _ll(logicspath)
+        for filename in lfs.dir(logicspath) do
+            if filename ~= "." and filename ~= ".." and _DirExists(logicspath.."\\"..filename) then
+                _lls(logicspath.."\\"..filename)
+            end
+        end
+    end
+end
+
+local function _lmain(logicspath)
+    if _FileExists(logicspath.."\\main.lua", "mode") then
+		local err = nil
+		_menv, err = loadfile(logicspath.."\\main.lua")
+		assert(_menv, err)
+		setfenv(_menv, _env)
+		_menv()
+	end
+end
+
+function _ll(logicspath, global)
 	if _DirExists(logicspath) then
 		for filename in lfs.dir(logicspath) do
-			if string.lower(filename)~="main.lua" then 
-				filename = logicspath .. "\\" .. filename
-			else 
-				filename="" 
-			end
-			if _FileExists(filename) then
+			if string.lower(filename) ~= "main.lua" and #filename > 4 then 
+                filename = logicspath .. "\\" .. filename
+		    else 
+                filename = "" 
+            end
+			if lfs.attributes(filename, "mode") == "file" then
 				local fname = filename:match'.*\\(.*)%.lua'
-				if #fname>=1 then
+				if #fname > 0 then
 					local chunk, err = loadfile(filename)
 					assert(chunk, err)
 					local _test = setmetatable({}, {__index = _G})
-					if _menv then 
-						setfenv(_menv, _test) _menv() 
-					end
+					if _menv then setfenv(_menv, _test) _menv() end
 					setfenv(chunk, _test)
 					chunk()
 					if _test["main"] then
 						if global then 
 							_globallogics[fname] = _test["main"]
 						else
-							_maplogics[fname] = _test["main"]
+                            _maplogics[fname] = _test["main"]
 						end
 						_env[fname.."Hit"] = _test["hit"]
 						_env[fname.."Attack"] = _test["attack"]
@@ -268,139 +292,63 @@ local function _ll(logicspath, global)
 			end
 		end
 	end
-	if _FileExists(logicspath.."\\main.lua") then
-		local err = nil
-		_menv, err = loadfile(logicspath.."\\main.lua")
-		assert(_menv, err)
-		setfenv(_menv, _env)
-		_menv()
-	end
-	
 end
 
 function _menu()
-	MapSoundsFolder(LoadFolder("GAME_SOUNDS"),"GAME")
-	MapImagesFolder(LoadFolder("GAME_IMAGES"),"GAME")
-	TextOutWithObjects(285,115,9000, 0, "CRAZY HOOK UPDATE","GAME_FONT","TextFadeIn")
-	TextOutWithObjects(270,122,9000, 0, "BY ZAX37 & CUBUSPL42","GAME_FONT","TextDelayed")
+	--MapSoundsFolder(LoadFolder("GAME_SOUNDS"),"GAME")
+	--MapImagesFolder(LoadFolder("GAME_IMAGES"),"GAME")
 end
 
 function _map(ptr)
 
 	mdl_codes.CrazyCheats(ptr)
-	mdl_customs_window(ptr)
-	mdl_commandline.Map(cl_argv)
-	
-	-- The level is selected and the loading starts:
+	mdl_cust_wnd(ptr)
+	mdl_cmd.Map(cl_argv)
+    mdl_lclock.clock(ptr)
+    mdl_cust_map.LoadCustomAssets(ptr)
+
 	if _chameleon[0] == chamStates.LoadingStart then
-		local ccnopera = ffi.cast("char*",0x41D4B6)
-		local ccnoperb = ffi.cast("char*",0x41D4CB)
-		for i=2,4 do 
-			ccnopera[i] = 0xFF 
-			ccnoperb[i] = 0xFF 
-		end
-		ccnopera[5] = 0xFD 
-		ccnoperb[5] = 0xFE
-        TNTFix(false)
-		_DoOnlyOnce, _env["OnMapLoad"] = false, nil
-		mdl_exev.NoEffects[0] = 0
-		local splasher = ffi.cast("char*",0x463B5C)
-		splasher[1] = 0x80
-		splasher[2] = 0x78
-		splasher[3] = 0x52
-		fullname = GetMapName()
-		if #fullname == 0 then
-			mdl_exef._SetBgImage(nRes(11), "LOADING", 1, 1, 1, 0) 
-		else
-			name = fullname:match'^%a:*\\(.*)%.'
-			assert(name, "Could not match the map name in string '" .. fullname .. "'.")
-			path = fullname:match'^(.*)%.'
-			assert(path, "Could not match the map path in string '" .. fullname .. "'.")
-			--
-			local cscreen = 0
-			if _DirExists(path) then
-			--
-				IncludeAssets(path)
-				if _DirExists(path.."\\SCREENS") then
-					local temp = nRes(11,8)
-					local str = ffi.cast("char*", 0x52719C)
-					local cpy = ffi.cast("char*","%s")
-					for i=0,3 do
-						str[i] = cpy[i]
-					end
-					snRes(ffi.cast("int",LoadFolder("SCREENS")),11,8)
-					cscreen = mdl_exef._SetBgImage(nRes(11),"LOADING",1,1,1,0)
-					cpy = ffi.cast("char*","\\SCREENS\\%s")
-					for i=0,12 do
-						str[i] = cpy[i]
-					end
-					snRes(temp,11,8)
-				end
-			end
-			if cscreen==0 then	
-				mdl_exef._SetBgImage(nRes(11),"LOADING",1,1,1,0) 
-			end
-		end
-	-- the loading, the game gets the assets:
+        mdl_exev.NoEffects[0] = 0
+		_DoOnlyOnce = false
+        _env["OnMapLoad"] = nil
+        _maplogics = { }
+	    _menv = nil
+        _objects            = {} -- id -> ObjectA*
+        _objects_data       = {} -- address -> data table
+        _objects_names      = {} -- address -> object name (ones from CreateObject)
+        
 	elseif _chameleon[0] == chamStates.LoadingAssets then
-		if fullname ~= "" then
-			map_folder(path,"TILES")
-			map_folder(path,"IMAGES")
-			map_folder(path,"SOUNDS")
-			map_folder(path,"ANIS")
-			map_folder(path,"LEVEL")
-			if _DirExists(path.."\\IMAGES\\SPLASH") then
-				if LoadAssetB("CUSTOM_SPLASH") ~= nil then
-					local splasher = ffi.cast("char*",0x463B5C)
-					splasher[1] = 0x60
-					splasher[2] = 0xBE
-					splasher[3] = 0x50
-				end
-			end
-			_maplogics = {}
-			_menv = nil
-			_ll(path .. "\\LOGICS")
+        local map_fullname = GetMapName()
+		if #map_fullname > 0 then
+            local map_path = map_fullname:match'^(.*)%.'
+            _lls(map_path .. "\\LOGICS")
+            _lmain(map_path .. "\\LOGICS")
 		end
 		
-	-- the loading, the game gets the objects:
 	elseif _chameleon[0] == chamStates.LoadingObjects then
 		if not _DoOnlyOnce then
 			_DoOnlyOnce = true
-			_objects = {}
-			_data = {}
-			_names = {}
 			local logic = _env["OnMapLoad"]
 			if type(logic) == "function" then 
                 logic() 
             end
+            
 		end
 		local object = ffi.cast("ObjectA*",ptr)
 		_objects[object.ID] = object
-		_data[_GetObjectsAddress(object)] = {}
+		_objects_data[_GetObjectsAddress(object)] = {}
 		_init(object)
-		
-	-- the level starts:	
-	elseif _chameleon[0] == chamStates.LoadingEnd then
-		if fullname ~= "" then 
-			local musicspath = path .. "\\MUSIC"
-			if _DirExists(musicspath) then
-				for filename in lfs.dir(musicspath) do
-					if _FileExists(musicspath.."\\"..filename) then
-						MapMusicFile(LoadFolder("MUSIC"),filename:match('(.*)%.'))
-					end
-				end
-			end
-		end
-		
-	-- during the gameplay when the window gets the message:	
-	--elseif _chameleon[0] == chamStates.OnPostMessageA then
-		--MessageBox(HEX(tonumber(ffi.cast("int",ptr))))
-		
-	-- during the gameplay:
+
 	elseif _chameleon[0] == chamStates.Gameplay then
-		mdl_drects.DebugRects(ptr)
+        --LoopThroughObjects(debug_try)
+		mdl_dbg_tools.DebugRects(ptr)
+		mdl_dbg_tools.DebugText(ptr)
 	end
-	
+
+end
+
+function LoadPalette(filename)
+	mdl_pals.LoadPalette(filename, nRes(11)+0x360)
 end
 
 function LoadFolder(name)
@@ -423,7 +371,7 @@ function GetBuiltinLogic(name)
 	local asset = ffi.new("void*[1]")
 	mdl_exef._LoadAsset(Game(5)+16, name, asset)
 	if asset[0] == nil then return end
-	return ffi.cast("Logic*",ffi.cast("int",asset[0])+16)[0]
+	return ffi.cast("Logic*", ffi.cast("int",asset[0])+16)[0]
 end
 
 function MapSoundsFolder(address,short)
@@ -438,8 +386,8 @@ function MapAnisFolder(address,short)
 	mdl_exef._MapAnisFolder(nRes(11,3,11), address, short, "_")
 end
 
-function LoadSingleFile(address,name,constante)
-	return mdl_exef._LoadSingleFile(address,name,constante)
+function LoadSingleFile(address,name,constant)
+	return mdl_exef._LoadSingleFile(address,name,constant)
 end
 
 function MapMusicFile(address,name)
@@ -454,11 +402,12 @@ function MapMusicFile(address,name)
 	end
 end
 
-function IncludeAssets(name)
-	local noper = ffi.cast("char*",0x4B720F)
-	noper[0]=0xE8 noper[1]=0xDC noper[2]=0xEE noper[3]=0xFF noper[4]=0xFF
-	ret = mdl_exef._IncludeAssets(nRes(13),name,0)
-	--if ret==1 then AssetsNb = AssetsNb + 1 end
+function IncludeAssets(path)
+    local inst = ffi.cast("char*",0x4B720F)
+    local oper = ffi.cast("unsigned int*", 0x4B7210)
+    inst[0] = 0xE8 -- CALL
+    oper[0] = 0xFFFFEEDC -- 004B60F0
+	ret = mdl_exef._IncludeAssets(nRes(13), path, 0)
 	return ret
 end
 
@@ -479,7 +428,7 @@ end
 
 local function _ReduceClawGlitters()
 	local catglit = ffi.cast("ObjectA*",PlayerData()._CGlit)
-	if catglit~=nil then
+	if catglit ~= nil then
 		catglit:Destroy()
 		PlayerData()._CGlit = 0
 	end
@@ -500,44 +449,6 @@ function MakeScreenshot(filename)
 	return mdl_exef._MakeScreenToFile(nRes(12,1,4,11), filename, 1, nRes(11,11,4), 0)
 end
 
-function TextOutWithObjects(x,y,z,flags,string,image,effect)
-	local logic = 'CustomLogic'
-	if effect==nil then 
-		logic = 'DoNothing'
-	end
-	
-	for i = 1, #string do
-		local obj = CreateObject{x = x + i*8, y = y, z = z, flags = flags, logic = logic, name = "_" .. effect}
-		obj:SetImage(image)
-		obj.DrawFlags.flags = DrawFlags.NoDraw
-		local frame = string.upper(string):byte(i)
-		if frame > 64 and frame < 91 then 
-			obj:SetFrame(frame-64)
-		elseif frame == 32 then 
-			obj.Flags.flags = 0x10000
-		elseif frame == 38 then 
-			obj:SetFrame(53)
-		elseif frame == 46 then 
-			obj:SetFrame(38) 
-			obj.Y = obj.Y+3
-		else 
-			obj:SetFrame(frame-21) 
-		end
-		if i==1 then 
-			obj.First = true 
-		end
-		if i==#string then 
-			obj.Last = true 
-		end
-		
-		if effect=='TextDelayed' then 
-			obj.State = i*2+18
-		elseif effect=='TextFadeIn' then 
-			obj.State = i*3 
-		end
-	end
-end
-
 ----------------------------------------------------------
 ----------------------------------------------------------
 -----------------MAIN API FUNCTION EXPORTS----------------
@@ -549,43 +460,57 @@ function CreateObject(params)
 	local vars = {}
 	if params then
 		for i,k in pairs(params) do
-			if i=="name" then name = params.name
-			elseif i=="logic" then logic = params.logic
-			elseif i=="x" then x = params.x
-			elseif i=="y" then y = params.y
-			elseif i=="z" then z = params.z
-			elseif i=="flags" then flags = params.flags
-			elseif i=="ref" then ref = params.ref
-			elseif i=="image" then image = params.image
-			else vars[i]=params[i] end
+			if i == "name" then name = params.name
+			elseif i == "logic" then logic = params.logic
+			elseif i == "x" then x = params.x
+			elseif i == "y" then y = params.y
+			elseif i == "z" then z = params.z
+			elseif i == "flags" then flags = params.flags
+			elseif i == "ref" then ref = params.ref
+			elseif i == "image" then image = params.image
+            elseif i == "animation" then animation = params.animation
+			else vars[i] = params[i] 
+            end
 		end
 	end
+    if not logic then logic = "CustomLogic" end
 	object = mdl_exef._CreateObject(
-		ref or Game(2), 0,
-		x or 0, y or 0,	z or 0,
-		logic, flags or 0x40000
+		ref or Game(2),
+        0,
+		x or GetClaw().X,
+        y or GetClaw().Y,	
+        z or 0,
+		logic,
+        flags or 0x40000
 	)
 	assert(object)
 	if image then
 		object:SetImage(image)
 	end
+    if animation then
+        object:SetAnimation(animation)
+    end
 	if name then
 		if logic ~= "CustomLogic" then
 			error("You can call CreateObject with 'name' only for CustomLogic, not for " .. logic .. "!")
 		end
-		_names[_GetObjectsAddress(object)] = name
+		_objects_names[_GetObjectsAddress(object)] = name
 	end
-	for i,k in pairs(vars) do object[i] = k end
+	for i,k in pairs(vars) do 
+        object[i] = k 
+    end
 	object:Logic()
 	return object
 end
 
 function KeyPressed(key)
-	return mdl_exef._KeyPressed(key)~=0
+	return mdl_exef._KeyPressed(key) ~= 0
 end
 
 function SetDeathType(type)
-	for i=0,2 do LevelBasedData[i].DeathTileType = type end
+	for i=0,1 do 
+		LevelBasedData[i].DeathTileType = type 
+	end
 end
 
 function ChangeResolution(width,height)
@@ -616,17 +541,15 @@ end
 function GetTreasuresNb(n)
 	if n >= 0 and n <= 8 then 
         return mdl_exev.TreasuresCountTable[n]
-	else 
-        return "LOL NOPE" 
     end
 end
 
 function RegisterTreasure(n, nb)
-	if nb==nil then 
+	if nb == nil then 
         nb = 1 
     end
-	if n>=0 and n<=8 then 
-        mdl_exev.TreasuresCountTable[n] = mdl_exev.TreasuresCountTable[n]+nb 
+	if n >= 0 and n <= 8 then 
+        mdl_exev.TreasuresCountTable[n] = mdl_exev.TreasuresCountTable[n]+nb
     end
 end
 
@@ -653,15 +576,15 @@ Attemp = Attempt
 function PlayerData()
 	return GetClaw()._v._p
 end
+PData = PlayerData
 
 function GetTime()
 	return mdl_exev.MsCount[0]
 end
-
 GetTicks = GetTime
 
 function TextOut(text)
-	mdl_exef._TextOut(ffi.cast("int&", 0x00535910), tostring(text))
+	mdl_exef._TextOut(ffi.cast("int&", 0x535910), tostring(text))
 end
 
 function KillClaw()
@@ -689,7 +612,7 @@ function GetGameType()
 end
 
 function SetMusic(name)
-	mdl_exef._SetMusic(nRes(20), name, 1)
+	mdl_exef._SetMusic(nRes(20), string.upper(name), 1)
 end
 
 function SetMusicSpeed(value, time)
@@ -705,7 +628,7 @@ function BnW()
 end
 
 function GetInput()
-	return ffi.cast("int**", 0x535918)[0][2]
+	return mdl_exev.Inputs[0][2]
 end
 
 function GetMapName()
@@ -728,13 +651,6 @@ function GetBoss()
 	return mdl_exev.CurrentBoss[0]
 end
 
-function PlaySound(name, ignore_err)
-	local sound = nil
-	if name and type(name)~="string" then sound = name else sound = LoadAsset(name) end
-	if not ignore_err then assert(sound~=nil, "Sound does not exist!") end
-	if sound~=nil then mdl_exef._PlaySound(sound, ffi.cast("int*", 0x530990)[0], 0, 0, 0) return ffi.cast("int**",sound)[4][10]+100 end
-end
-
 function ClawSound(name)
 	mdl_exef._ClawSound(name,0)
 end
@@ -742,6 +658,8 @@ end
 function GetObject(id)
 	return _objects[id]
 end
+
+LoadBaseLevDefaults = mdl_exef._LoadBaseLevDefaults
 
 function CreateGoodie(table)
 	if not table.x then table.x = GetClaw().X end
@@ -753,8 +671,8 @@ end
 
 function CustomPowerup(func_name, time)
 	if not func_name then return end
-	if not time then time=0 end
-	_ReduceClawGlitters()
+	if not time then time = 0 end
+    _ReduceClawGlitters()
 	if CustomPowerupPointer and CustomPowerupPointer.CPN ~= func_name then
 		CustomPowerupPointer:Destroy()
 		CustomPowerupPointer = nil
@@ -767,11 +685,260 @@ function CustomPowerup(func_name, time)
 	CustomPowerupPointer.CPN = func_name
 end
 
-----------------------------------------------------------
-----------------------------------------------------------
------------------------OBJECT METHODS---------------------
-----------------------------------------------------------
-----------------------------------------------------------
+--------------------------------------------------------------
+--------------------------------------------------------------
+---------------------NEW FUNCTIONS IN 1.4.5-------------------
+--------------------------------------------------------------
+--------------------------------------------------------------
+
+function GetLogicAddr(obj)
+    return HEX(ffi.cast("int*", obj._v)[4])
+end
+
+function GetMusicState(name)
+    local ptr = mdl_exef._GetMusic(nRes(20), string.upper(name))
+    return mdl_exef._GetMusicState(ptr)
+end
+
+function StopMusic(name)
+	if GetMusicState(name) then
+        ffi.cast("int(*__thiscall)(int)", ffi.cast("int**", ptr)[0][8])(ptr)
+    end
+end
+
+function GetMainPlane()
+    return ffi.cast("Plane*", Game(9, 14, Game(9,23,1)))
+end
+
+function GetFrontPlane()
+    return ffi.cast("Plane*", Game(9, 14, Game(9,15) - 1))
+end
+
+function GetPlane(pI)
+	return ffi.cast("Plane*", Game(9,14,pI))
+end
+
+local function _planesNumber()
+	return Game(9,15)
+end
+
+function GetTile(pI, x, y)
+    if pI >= 0 and pI < _planesNumber() then
+		local _plane = GetPlane(pI)
+        if x >= 0 and x < _plane.Width and y >= 0 and y < _plane.Height then
+            local _tileIndex = x + y * _plane.Width
+            return _plane.Tiles[_tileIndex]
+        else
+            return -3
+        end
+    else
+        error("Error: no plane with index " .. pI .."!")
+    end
+end
+
+function PlaceTile(id, pI, x, y)
+    if pI >= 0 and pI < _planesNumber() then
+		local _plane = GetPlane(pI)
+        if x >= 0 and x < _plane.Width and y >= 0 and y < _plane.Height then
+            local _TileIndex = x + y * _plane.Width
+            _plane.Tiles[_tileIndex] = id
+        else
+            error("Coordinates out of plane boundaries!")
+        end
+    else
+        error("No plane with index " .. pI .."!")
+    end
+end
+
+function GetTileA(id)
+	local _tType = Game(9,19,id,0)
+	if _tType == TileType.Single then
+        return ffi.cast("SingleTileA*", Game(9,19,id))
+    elseif _tType == TileType.Double then
+        return ffi.cast("DoubleTileA*", Game(9,19,id))
+    elseif _tType == TileType.Mask then
+        return ffi.cast("MaskTileA*", Game(9,19,id))
+    end
+end
+
+function GetDetailsState()
+    return nRes(105)
+end
+
+function GetCurrentPowerup()
+	return _CurrentPowerup[0]
+end 
+
+function GetCurrentPowerupTime()
+    return _PowerupTime[0]
+end
+
+function GetRespawnPoint()
+	return {x = nRes(11,17), y = nRes(11,18)}
+end
+
+function SetRespawnPoint(x,y)
+    if x < Game(9,23,12) and x >= 0 and y < Game(9,23,13) and y >= 0 then
+	    snRes(x,11,17)
+		snRes(y,11,18)
+    else
+        error("Coordinates out of main plane boundaries!")
+    end
+end
+
+function GetClawAttackString()
+    return mdl_enums.AttackString[1+PlayerData().AttackType]
+end
+
+function CheatsUsed()
+	return nRes(18,74)
+end
+
+function StunClaw(mseconds)
+    snRes(mseconds,11,473)
+end
+
+function GetCameraPosition()
+    return {x = Game(9,23,33), y = Game(9,23,34)}
+end
+
+function GetFPSCounter()
+    return nRes(6)
+end
+
+function GetPlayerName()
+    return ffi.string(ffi.cast("const char*",nRes(25)+20))
+end
+
+function Earthquake(t)
+	mdl_exef._Quake(math.floor(t))
+end
+
+function CreateHUDObject(Rx, Ry, Rz, image)
+    local window = mdl_exev.PlayAreaRect[0]
+    if string.upper(tostring(Rx)) == "RANDOM" then 
+        Rx = math.random(window.Right) 
+    elseif string.upper(tostring(Rx)) == "CENTER" then
+        Rx = math.floor(0.5 + window.Right/2)
+    elseif tonumber(Rx) then
+        if Rx < 0 then 
+            Rx = rect.Right + Rx
+        else
+            Rx = tonumber(Rx) 
+        end 
+    else
+        error("Invalid X position")
+    end
+    if string.upper(tostring(Ry)) == "RANDOM" then 
+        Ry = math.random(window.Bottom) 
+    elseif string.upper(tostring(Ry)) == "CENTER" then
+        Ry = math.floor(0.5 + window.Bottom/2)
+    elseif tonumber(Ry) then
+        if Ry < 0 then 
+            Ry = window.Bottom + Ry
+        else
+            Ry = tonumber(Ry) 
+        end 
+    else
+        error("Invalid Y position")
+    end
+    if not tonumber(Rz) then
+        Rz = 0
+    else
+        Rz = tonumber(Rz)
+    end
+    local flags = ffi.new("Flags_t", 2)
+    return CreateObject{x=Rx,y=Ry,z=Rz,logic="BackgroundLogic",image=image, Flags=flags}
+end
+
+function ReplaceSound(name1, name2)
+    local _sound_ptr1 = mdl_exef._GetSound(Game(10)+16, name1)
+	local _sound_ptr2 = mdl_exef._GetSound(Game(10)+16, name2)
+	_sound_ptr1[0] = _sound_ptr2[0]
+end
+
+function PlaySound(name, volume, stereo, pitch, loop)
+	if not tostring(name) then
+		error("Invalid sound name")
+	else
+		local sound = mdl_exef._GetSoundA(Game(10), name)
+		if not volume then
+			volume = mdl_exev.SoundVolume[0]
+		elseif volume >= 3 then
+			volume = volume*mdl_exev.SoundVolume[0]
+		elseif volume <= 0 then
+			volume = 0
+		else
+			volume = volume*mdl_exev.SoundVolume[0]
+		end
+		if not stereo then
+			stereo = 0
+		end
+		if not pitch then
+			pitch = 0
+		end
+		if not loop then
+			loop = 0
+		end
+		mdl_exef._PlaySound(sound, volume, stereo, pitch, loop)
+	end
+end
+
+function StopSound(name)
+	local sound = mdl_exef._GetSoundA(Game(10), name)
+    if sound[4] then
+		mdl_exef._StopSound(sound)
+	end
+end
+
+function GetFoeAction(object)
+    actions = ffi.cast("int**", 0x5ACD40)[0]
+    return ffi.string( ffi.cast("const char*", actions[object.State - 2000]) )
+end
+
+function SetImgFlag(object, flag) 
+    if flag > 0 and flag <= 7 and flag ~= 4 then
+        mdl_exef._SetImgFlag(object.Image, flag)
+    else
+        error("Invalid image flag")
+    end
+end
+
+function SetImgColor(object, color) 
+    mdl_exef._SetImgColor(object.Image, tonumber(color))
+end
+
+function SetImgCLT(object, clt)
+    if string.upper(clt) == "LIGHT" then
+        mdl_exef._SetImgCLT(object.Image, nRes(11,474))
+    elseif string.upper(clt) == "AVERAGE" then
+        mdl_exef._SetImgCLT(object.Image, ffi.cast("int*", 0x5AAFBC)[0])
+    else
+        error("Invalid color table, use 'Average' or 'Light'")
+    end
+end
+
+function SetPalette(filename)
+	mdl_pals.LoadPalette(filename, nRes(11,11,14))
+    snRes(0xFFFF,11,11,4,3,55)
+    BnW()
+end
+
+function LoadAverageCLT(filename)
+    mdl_pals.LoadCLT(filename, ffi.cast("int**", 0x5AAFBC)[0][2])
+end
+
+function LoadLightCLT(filename)
+    mdl_pals.LoadCLT(filename, nRes(11,474,2))
+end
+
+--------------------------------------------------------------
+--------------------------------------------------------------
+-----------------------OBJECT METHODS-------------------------
+--------------------------------------------------------------
+--------------------------------------------------------------
+--------------------------------------------------------------
+
 
 function Object:Destroy()
 	self.Flags.flags = 0x10000
@@ -806,7 +973,7 @@ function Object:SetFrame(nb)
 end
 
 function Object:AnimationStep()
-	mdl_exef._AnimationStep(ffi.cast("char*", self) + 0x1A0, ffi.cast("int*", 0x005AAFD8)[0])
+	mdl_exef._AnimationStep(ffi.cast("char*", self) + 0x1A0, ffi.cast("int*", 0x5AAFD8)[0])
 end
 
 function Object:IsBelow(object)
@@ -822,58 +989,54 @@ function Object:DropCoin()
 end
 
 function Object:GetData()
-	return _data[_GetObjectsAddress(self)]
+	return _objects_data[_GetObjectsAddress(self)]
 end
 
-----------------------------------------------------------
-----------------------------------------------------------
-----------------------OBJECT METATYPE---------------------
-----------------------------------------------------------
-----------------------------------------------------------
+function Object:CreateGlitter(img)
+    if tonumber(ffi.cast("int", Object.GlitterPointer)) == 0 then
+        if not img then img = "GAME_GLITTER"
+        elseif string.lower(img) == "green" then img = "GAME_GREENGLITTER"
+        elseif string.lower(img) == "red" then img = "GAME_GLITTERRED"
+        elseif string.lower(img) == "warp" then img = "GAME_WARPGLITTER"
+        elseif string.lower(img) == "gold" then img = "GAME_GLITTER"
+        end
+        Object.GlitterPointer = CreateObject{x=Object.X, y=Object.Y, z=Object.Z, logic="PowerupGlitter", image=img, animation="GAME_CYCLE50"}
+    end
+end
 
-ffi.metatype("ObjectA", {
-	__index = function(self, key)
-		local ok, result = pcall(function()
-			return self._v[key]
-		end)
-		if ok then
-			return result
-		end
-		local data = _data[_GetObjectsAddress(self)]
-		if data then
-			local result = data[key]
-			if result ~= nil then
-				return result
-			end
-		end
-		if Object[key] then
-			return Object[key]
-		end
-	end,
-	__newindex = function(self, key, val)
-		local ok = pcall(function()
-			return self._v[key]
-		end)
-		if ok then
-			self._v[key] = val
-			return
-		end
-		local data = _data[_GetObjectsAddress(self)]
-		if data then
-			data[key] = val
-			return
-		end
-		error("ObjectA __newindex " .. GetCustomLogicName(self) .. " " .. key .. " " .. tostring(val))
-	end
-})
+--------------------------------------------------------------
+--------------------------------------------------------------
+------------------------EXECUTIVE PART------------------------
+--------------------------------------------------------------
+--------------------------------------------------------------
 
-----------------------------------------------------------
-----------------------------------------------------------
------------------------EXECUTIVE PART---------------------
-----------------------------------------------------------
-----------------------------------------------------------
-
-SkipTitleScreen[0] = GetValueFromRegister("Skip Title Screen")
-SkipLogoMovies[0] = GetValueFromRegister("Skip Logo Movies")
+dofile 'mods\\CrazyPatches.lua'
+mdl_exev.SkipTitleScreen[0] = GetValueFromRegister("Skip Title Screen")
+mdl_exev.SkipLogoMovies[0] = GetValueFromRegister("Skip Logo Movies")
 _ll("Assets\\GAME\\LOGICS", true)
-mdl_commandline.Execute(cl_argv)
+mdl_cmd.Execute(cl_argv)
+
+--[[ testing ground:
+ffi.cast("int*", 0x4940BF)[0] = 250000 -- value for the next extra live, default: 500000
+ffi.cast("char*", 0x494136)[0] = 4 -- left shift of 15625, default: 5
+-- Tiger magic block (may crash on other enemies):
+ffi.cast("char*", 0x43FA6A)[0] = 0x4C
+function debug_try(obj)
+    --if obj.Logic == Tentacle then -- 0x495870
+    --if obj.Logic == BossStager then -- 0x4913D0
+    --if obj.Logic == AmmoPowerup then -- 472CB0
+    --if obj.Logic == CursePowerup then -- 472600
+    --if GetImgStr(obj.Image) == "LEVEL_RATBOMB" then
+    --if obj.Logic == Bullet then
+    --if obj.Logic == BossWarp then -- 472450
+    --if GetImgStr(obj.Image) == "GAME_MAPPIECE" then -- 471D90
+    if obj.Logic == CursePowerup then
+        TextOut(ffi.cast("int*", obj._v)[90].." "..ffi.cast("int*", obj._v)[91])
+        --obj.PhysicsType = 1
+        -- 410510 arrow -- 415940 cannonball -- 411090 sirenproj -- 411200 trident
+        -- 410680 claw pistol -- 4107F0 magic claw -- 480090 rat bomb
+        --TextOut(GetLogicAddr(obj).." "..obj.AttackRect.Left.." "..obj.AttackRect.Top.." "..obj.AttackRect.Right.." "..obj.AttackRect.Bottom)
+        --BossStager States: {5, 8006, 8008, 8005, 8007, 8000, 8001, 8002, 8004}
+        --ffi.cast("int*", obj._userdata)[195] = 1
+    end
+end]]
