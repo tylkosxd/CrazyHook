@@ -2,7 +2,7 @@ local _enums = {
 
 	GameType = {
 		SinglePlayer = 3,
-		MultiPlayer = 4,
+		MultiPlayer = 4
 	},
 	
 	TreasureType = {
@@ -14,27 +14,30 @@ local _enums = {
 		Scepter = 5,
 		Gecko = 6,
 		Crown = 7,
-		Skull = 8,
+		Skull = 8
 	},
 	
 	Powerup = {
-		EndOfLevel       = 9901,
-		Warp             = 9902,
-		TNTAmmo          = 9904,
-		AmmoCurse        = 9905,
-		MagicCurse       = 9906,
-		HealthCurse      = 9907,
-		LifeCurse        = 9908,
-		TreasureCurse    = 9909,
-		FreezeCurse      = 9910,
-		Ghost            = 9911,
-		FireSword        = 9912,
-		LighteningSword  = 9913,
-		IceSword         = 9914,
-		PlasmaSword      = 9915,
-		Catnip           = 9916,
-		Vader            = 9917,
-		ExtraLife        = 9918,
+		EndOfLevel       = 0x26AD,
+		Warp             = 0x26AE,
+        AniRope          = 0x26AF,
+		TNTAmmo          = 0x26B0,
+		AmmoCurse        = 0x26B1,
+		MagicCurse       = 0x26B2,
+		HealthCurse      = 0x26B3,
+		LifeCurse        = 0x26B4,
+		TreasureCurse    = 0x26B5,
+		FreezeCurse      = 0x26B6,
+		Ghost            = 0x26B7,
+		FireSword        = 0x26B8,
+		LighteningSword  = 0x26B9,
+		IceSword         = 0x26BA,
+		PlasmaSword      = 0x26BB,
+		Catnip           = 0x26BC,
+		Vader            = 0x26BD,
+		ExtraLife        = 0x26BE,
+        SirenProjectile  = 0x26BF,
+		Custom 			 = 0x29A
 	},
 	
 	ObjectType = {
@@ -42,19 +45,100 @@ local _enums = {
 		Player           = 2,
 		Enemy            = 4,
 		PowerUp          = 8,
-		Shot             = 16,
-		PShot            = 32,
-		EShot            = 64,
-		Special          = 128,
-		User1            = 256,
-		User2            = 512,
-		User3            = 1024,
-		User4            = 2048,
+		Shot             = 0x10,
+		PShot            = 0x20,
+		EShot            = 0x40,
+		Special          = 0x80,
+		User1            = 0x100,
+		User2            = 0x200,
+		User3            = 0x400,
+		User4            = 0x800,
+        User5            = 0x1000,
+        User6            = 0x2000,
+        User7            = 0x4000,
+        User8            = 0x8000,
+        User9            = 0x10000,
+        User10           = 0x20000,
+        User11           = 0x40000,
+        User12           = 0x80000,
+        User13           = 0x100000,
+        User14           = 0x200000,
+        User15           = 0x400000,
+        User16           = 0x800000,
+        User17           = 0x1000000,
+		User18     		 = 0x2000000,
+        User19           = 0x4000000,
+        User20           = 0x8000000,
+        User21           = 0x10000000,
+        User22           = 0x20000000,
+        User23           = 0x40000000,
+        User24           = 0x80000000
 	},
 	
-	DeathType={
+	DeathType = {
 		Spikes = 0,
 		Goo = 1
+	},
+	
+	TileAttribute = {
+		Clear = 0, 
+		Solid = 1, 
+		Ground = 2, 
+		Climb = 3,  
+		Death = 4, 
+		Mask = 6
+	},
+	
+	TileType = {
+		Single = 0x51414C,
+		Double = 0x51418C,
+		Mask = 0x5141CC
+	},
+	
+	PlayerInput = { 
+        Jump = 1,
+        Attack = 2,
+        Projectile = 4,
+        ToggleProjectile = 8,
+        Lift = 32,
+        Pistol = 64,
+        Magic = 128,
+        Dynamite = 256,
+        Special = 512,
+        Left = 0x1000000,
+        Right = 0x2000000,
+        Up = 0x4000000,
+        Down = 0x8000000
+	},
+	
+	ImageFlags = {
+		Normal = 1, 
+		Ghost = 2, 
+		Shadow = 3, 
+		Fill = 5, 
+		Predator = 6, 
+		Blob = 7
+	},
+	
+	AttackString = { 
+    "none", 
+    "stand_sword_stab", 
+    "none", 
+    "stand_straight_punch", 
+    "stand_hook_punch", 
+    "stand_pistol_shot", 
+    "stand_magic_claw", 
+    "crouch_sword_stab", 
+    "air_sword_stab", 
+    "air_pistol_shot", 
+    "air_magic", 
+	"none", 
+    "stand_dynamite_throw", 
+    "stand_front_kick", 
+    "crouch_pistol_shot", 
+    "crouch_magic_claw", 
+    "crouch_dynamite_throw", 
+    "air_dynamite_throw"
 	},
 	
 	Chameleon = {
@@ -69,7 +153,27 @@ local _enums = {
 	},
 
 	Message = {
-		MPSCULLY = 0x800E,
+		CustomLevelStart = 0x8005,
+		NewGame = 0x807F,
+		LoadGame = 0x807E,
+		MenuStart = 0x8023,
+		InGameMenu = 0x8080,
+		OpenWindow = 0x8090,
+		BackToGame = 0x8036,
+		Credits = 0x8021,
+		Booty = 0x807C,
+		ClawDeath = 0x803A,
+		Teleport = 0x805C,
+		OpenCustomLevelWindow = 0x8042,
+		ExitGame = 0x8008,
+		ClawSuicide = 0x8063,
+		Multiplayer = 0x8025,
+		HelpScreen = 0x8035,
+		EditMacros = 0x8059,
+		UploadScores = 0x8039,
+		IncreasePlayArea = 0x801B,
+		DecreasePlayArea = 0x801C,
+		EndOfLevel = 0x800E,
 		MPMOULDER = 0x800F,
 		MPKFA =   0x8043,
 		MPAPPLE = 0x8044,
