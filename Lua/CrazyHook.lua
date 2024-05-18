@@ -19,7 +19,7 @@ dofile 'mods\\chCdecl.lua'
 dofile 'mods\\chMetaTypes.lua'
 
 -- load CrazyHook modules:
-local mdls_path         = 'Assets.MODULES.'
+local mdls_path         = 'mods.'
 local mdl_enums         = require (mdls_path .. 'chEnums')
 local mdl_flags         = require (mdls_path .. 'chFlags')
 local mdl_codes         = require (mdls_path .. 'chCodes')
