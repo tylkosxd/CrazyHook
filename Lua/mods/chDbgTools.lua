@@ -1,7 +1,8 @@
-_drects = {}
+local _dbg = {}
 
-_drects.DebugRects = function(ptr)
-	if AND(InfosDisplayState[0], InfosFlags.DebugRects) ~= 0 then
+
+_dbg.DebugRects = function(ptr)
+	if InfosDisplay[0].DebugRects == true then
 		if ptr then 
 			hdc = tonumber(ffi.cast("int",ptr)) 
 		end
@@ -17,7 +18,7 @@ _drects.DebugRects = function(ptr)
 		}
 		ffi.C.SelectObject(hdc, winobtab.pen)
 		ffi.C.SelectObject(hdc, winobtab.brush)
-		LoopThroughObjects(_drects.DrawRects)
+		LoopThroughObjects(_dbg.DrawRects)
 		local topblack = tonumber(ffi.cast("int&",0x535844))
 		local botblack = tonumber(ffi.cast("int&",0x53584C))
 		ffi.C.SelectObject(hdc, winobtab.pen)
@@ -31,9 +32,8 @@ _drects.DebugRects = function(ptr)
 	end
 end
 
-_drects.DrawRects = function(object)
+_dbg.DrawRects = function(object)
 
-	local debugMoreInfo = AND(InfosDisplayState[0], InfosFlags.DebugRectsPlus) ~= 0
 	local screenx, screeny = Game(9,23,16), Game(9,23,17)
 	
 	if  object.Logic ~= CaptainClawScreenPosition 
@@ -47,6 +47,7 @@ _drects.DrawRects = function(object)
 	and object.Logic ~= BehindCandy 
 	and object.Logic ~= FrontCandy 
 	and object.Logic ~= AniCycle
+    and object.Logic ~= MultiStats
 	then
 	
 		local osx, osy = object.X-screenx, object.Y-screeny+tonumber(ffi.cast("int&",0x535844))
@@ -62,7 +63,7 @@ _drects.DrawRects = function(object)
 			ffi.C.SelectObject(hdc, winobtab.brusha)
 			ffi.C.Rectangle(hdc,{osx+object.HitRect.Left,osy+object.HitRect.Top,osx+object.HitRect.Right,osy+object.HitRect.Bottom})
 		end
-		if debugMoreInfo then
+		if InfosDisplay[0].DebugRectsPlus == true then
 			local str = "#"
 			if object.IsGameplayObject <= 0 then 
 				str = str..object.EditorID
@@ -85,4 +86,23 @@ _drects.DrawRects = function(object)
 	end
 end
 
-return _drects
+_dbg.DebugText = function (ptr)
+	if InfosDisplay[0].DebugText == true then
+		if ptr then 
+			hdc = tonumber(ffi.cast("int",ptr)) 
+		end
+		ffi.C.SetTextColor(hdc, 0xFFB0B0)
+		for i, str in ipairs(debug_text) do
+			str = tostring(str)
+			if #str > 0 and tonumber(i) then
+				if tonumber(i) > 0 and tonumber(i) <= 12 then
+					local rect = ffi.new("Rect",{8, 44+24*i, 8+#str*10, 64+24*i})
+					local lprect = ffi.new("Rect[1]", rect)
+					ffi.C.DrawTextA(hdc, str ,#str, lprect, 20)
+				end
+			end
+		end
+	end
+end
+
+return _dbg
