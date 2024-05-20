@@ -993,14 +993,20 @@ function Object:GetData()
 end
 
 function Object:CreateGlitter(img)
-    if tonumber(ffi.cast("int", Object.GlitterPointer)) == 0 then
+    if tonumber(ffi.cast("int", self.GlitterPointer)) == 0 then
         if not img then img = "GAME_GLITTER"
         elseif string.lower(img) == "green" then img = "GAME_GREENGLITTER"
         elseif string.lower(img) == "red" then img = "GAME_GLITTERRED"
         elseif string.lower(img) == "warp" then img = "GAME_WARPGLITTER"
         elseif string.lower(img) == "gold" then img = "GAME_GLITTER"
         end
-        Object.GlitterPointer = CreateObject{x=Object.X, y=Object.Y, z=Object.Z, logic="PowerupGlitter", image=img, animation="GAME_CYCLE50"}
+        self.GlitterPointer = CreateObject{x=self.X, y=self.Y, z=self.Z, logic="PowerupGlitter", image=img}
+    end
+end
+
+function Object:DestroyGlitter()
+    if tonumber(ffi.cast("int", self.GlitterPointer)) ~= 0 then
+        self.GlitterPointer.Flags.flags = 0x10000
     end
 end
 
