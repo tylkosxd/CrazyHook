@@ -54,7 +54,7 @@ local function MatchTilesPattern(layer, str, row, column)
 	for key in string.gmatch(str, "/([^/]+)") do
 		table.insert(keys, key)
 	end
-	
+	--UNDER DEVELOPMENT
 end
 
 -- Get tile attributes/properties:
