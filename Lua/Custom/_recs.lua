@@ -413,5 +413,8 @@ recs["The Big Treasure Chest"] = 2
 recs["The Poisonous Caves"] = 2
 recs["Ring of Fire"] = 2
 recs["Lava Factory"] = 2
+recs["Just Some PegLegs"] = 1
+recs["ClawoPiano"] = 2
+reca["Pina Colada"] = 2
 
 return recs
