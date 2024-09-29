@@ -1,7 +1,7 @@
 local _cmdDoOnlyOnce = false
-local cmd = { }
+local CMD = { }
 
-cmd.Get = function()
+CMD.Get = function()
 	local argv = ffi.string(ffi.C.GetCommandLineA())
     local rel = ""
 	local argvs = {
@@ -51,7 +51,7 @@ cmd.Get = function()
 end
 
 
-cmd.Map = function(argvs)
+CMD.Map = function(argvs)
 	if _chameleon[0] == chamStates.LoadingStart then
 		_cmdDoOnlyOnce = false
 	end
@@ -133,7 +133,7 @@ cmd.Map = function(argvs)
 end
 
 
-cmd.Execute = function(argvs)
+CMD.Execute = function(argvs)
 	if argvs.custom ~= "" or (argvs.retail > 0 and argvs.retail < 15) then
 		mdl_exe.SkipTitleScreen[0] = 1
 		mdl_exe.SkipLogoMovies[0] = 1
@@ -160,4 +160,4 @@ cmd.Execute = function(argvs)
 	end
 end
 
-return cmd
+return CMD
