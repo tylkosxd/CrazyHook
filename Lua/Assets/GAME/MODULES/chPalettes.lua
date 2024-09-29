@@ -1,4 +1,4 @@
-local pals = {}
+local PALS = {}
 
 local function _GetPalPath(filename)
 	return GetMapName():match'^(.*)%.' .."\\PALETTES\\"..filename
@@ -14,7 +14,7 @@ local function _SetLimit(min, max)
     return min, max
 end
 
-pals.RGB_HSL = function(color)
+PALS.RGB_HSL = function(color)
     local R, G, B = color.Red/255, color.Green/255, color.Blue/255
     local m, M = math.min(R, G, B), math.max(R, G, B)
     local C, H = M-m, 0
@@ -53,7 +53,7 @@ local function hueToRGB(p, q, t)
     return math.min(255*ret)
 end
 
-pals.HSL_RGB = function(H, S, L)
+PALS.HSL_RGB = function(H, S, L)
     local color = ffi.new("CColor")
     if S == 0 then
         color = {math.min(L*255), math.min(L*255), math.min(L*255)}
@@ -72,7 +72,7 @@ pals.HSL_RGB = function(H, S, L)
     return color
 end
 
-pals.LoadPalette = function(filename, pal)
+PALS.LoadPalette = function(filename, pal)
 	if not filename:match"^(%a:)" then
 		filename = _mappath .. "\\PALETTES\\" .. filename
 	end
@@ -108,14 +108,14 @@ pals.LoadPalette = function(filename, pal)
 	end 
 end
 
-pals.Copy = function(dst, src)
+PALS.Copy = function(dst, src)
 	dst, src = ffi.cast("int*", dst), ffi.cast("int*", src)
 	for x = 0, 255 do
         dst[x] = src[x]
     end
 end
 
-pals.Invert = function(pal)
+PALS.Invert = function(pal)
     for x = 0,255 do
         pal[x].Red = 255 - pal[x].Red
         pal[x].Green = 255 - pal[x].Green
@@ -123,7 +123,7 @@ pals.Invert = function(pal)
     end
 end
 
-pals.AdjustRGB = function(pal,r,g,b,min,max)
+PALS.AdjustRGB = function(pal,r,g,b,min,max)
     min, max = _SetLimit(min, max)
     for x = min, max do
         pal[x].Red = _SetLimit(pal[x].Red + r)
@@ -132,18 +132,18 @@ pals.AdjustRGB = function(pal,r,g,b,min,max)
     end
 end
 
-pals.AdjustHSL = function(pal,h,s,l,min,max)
+PALS.AdjustHSL = function(pal,h,s,l,min,max)
     min, max = _SetLimit(min, max)
     for x = min, max do
-        local H, S, L = pals.RGB_HSL(pal[x])
+        local H, S, L = PALS.RGB_HSL(pal[x])
         H = ((H + h) % 360)/360
         S = math.max(math.min(1, S+s/100), 0)
         L = math.max(math.min(1, L+l/100), 0)
-        pal[x] = pals.HSL_RGB(H, S, L)
+        pal[x] = PALS.HSL_RGB(H, S, L)
     end
 end
 
-pals.BlackAndWhite = function(pal, min, max) -- MPGLOOMY effect
+PALS.BlackAndWhite = function(pal, min, max) -- MPGLOOMY effect
 	min, max = _SetLimit(min, max)
     for x = min, max do
         pal[x].Red = math.floor(pal[x].Red*0.3 + pal[x].Green*0.59 + pal[x].Blue*0.11)
@@ -152,7 +152,7 @@ pals.BlackAndWhite = function(pal, min, max) -- MPGLOOMY effect
     end
 end
 
-pals.ExportToFile = function(pal, filename)
+PALS.ExportToFile = function(pal, filename)
 	if not filename then
 		filename = GetClawPath() .. "\\pal_export_" ..os.time() ..".PAL"
 	end
@@ -165,7 +165,7 @@ pals.ExportToFile = function(pal, filename)
 	output:close()
 end
 
-pals.LoadCLT = function(filename, clt_ptr)
+PALS.LoadCLT = function(filename, clt_ptr)
 	local cltPtr = ffi.cast("unsigned char*", clt_ptr)
     local cltPath = _mappath .. "\\PALETTES\\" .. filename
 	if _FileExists(cltPath) then
@@ -261,7 +261,7 @@ local function MatchColorToPal(luv_color, luv_pal)
 	return table.key(diff, math.min(unpack(diff)))
 end
 
-pals.CreateCltFile = function(pal, fun, filename)
+PALS.CreateCltFile = function(pal, fun, filename)
 	if not filename then
 		filename = GetClawPath() .. "\\clt_new_" ..os.time() ..".CLT"
 	end
@@ -281,12 +281,12 @@ pals.CreateCltFile = function(pal, fun, filename)
 	output:close()
 end
 
-pals.CreateLightCltFile = function(pal, filename)
-	pals.CreateCltFile(pal, CalcLIGHT, filename)
+PALS.CreateLightCltFile = function(pal, filename)
+	PALS.CreateCltFile(pal, CalcLIGHT, filename)
 end
 
-pals.CreateAverageCltFile = function(pal, filename)
-	pals.CreateCltFile(pal, CalcAVERAGE, filename)
+PALS.CreateAverageCltFile = function(pal, filename)
+	PALS.CreateCltFile(pal, CalcAVERAGE, filename)
 end
 
-return pals
+return PALS
