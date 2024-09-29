@@ -32,27 +32,110 @@ local function GetSaveVals(data, n)
     return t
 end
 
-local function CheckSum(t)
-	local sum = t[1] + t[2] + t[3] + t[4] - t[5] - t[6] - t[7] - t[8] - t[9] - t[10] - t[11] - t[12] - t[13] - t[14] - t[15] - t[16] - t[17] + 788529152
-	return tonumber(ffi.cast("unsigned int", tonumber(NOT(sum)))) == t[18]
+local function CalcSum(t)
+	local sum = t[1]*1.16 + t[2]*2.4 + t[3]*0.73 + t[4]*0.48 - t[5]*t[6]*0.5 - t[7]*t[8] - t[9]*0.6 - t[10]*0.79 - t[11]*1.25 - t[12]*0.84 - t[13]*t[14]*0.07 - t[15]*t[16]*0.14 - t[17]*3.12 + 788529152
+	local cstr = _GetCStr(_mapname)
+	return math.floor(cstr[0]*cstr[#_mapname-1] + sum*cstr[0]/50)
 end
 
-local function CalcSum()
-	local claw = GetClaw()
-	local player = PData()
-	local sum = claw.Score + claw.Health + claw.X + claw.Y - player.PistolAmmo - player.MagicAmmo - player.DynamiteAmmo - player.Lives - player.CollectedCoin - player.CollectedGoldbar - player.CollectedRing - player.CollectedChalice - player.CollectedCross - player.CollectedScepter - player.CollectedGecko - player.CollectedCrown - player.CollectedSkull + 788529152
-	return tonumber(ffi.cast("unsigned int", tonumber(NOT(sum))))
+local function CalcSum2(one, two)
+	local cstr = _GetCStr(_mapname)
+	return one*cstr[0] + two*cstr[#_mapname-1] + cstr[0]*cstr[0] + 729
 end
 
-local function GetCurPlayerStats()
-	return 'saves["'.._mapname..'"]['..sp[0]..'] = {' ..GetClaw().Score..","..GetClaw().Health..","..GetClaw().X..","..GetClaw().Y..","..PData().PistolAmmo..","..PData().MagicAmmo..","..
-    PData().DynamiteAmmo..","..PData().Lives..","..PData().CollectedCoin..","..PData().CollectedGoldbar..","..PData().CollectedRing..","..PData().CollectedChalice..","..
-    PData().CollectedCross..","..PData().CollectedScepter..","..PData().CollectedGecko..","..PData().CollectedCrown..","..PData().CollectedSkull..","..CalcSum().."}"
+local function GetCurPlayerStatsStr()
+	local t = { 
+		GetClaw().Score,
+		GetClaw().Health,
+		GetClaw().X,
+		GetClaw().Y,
+		PData().PistolAmmo,
+		PData().MagicAmmo,
+		PData().DynamiteAmmo,
+		PData().Lives,
+		PData().CollectedCoin,
+		PData().CollectedGoldbar,
+		PData().CollectedRing,
+		PData().CollectedChalice,
+		PData().CollectedCross,
+		PData().CollectedScepter,
+		PData().CollectedGecko,
+		PData().CollectedCrown,
+		PData().CollectedSkull
+	}
+	return 'saves["'.._mapname..'"]['..sp[0]..'] = {' ..t[1]..","..t[2]..","..t[3]..","..t[4]..","..t[5]..","..t[6]..","..
+    t[7]..","..t[8]..","..t[9]..","..t[10]..","..t[11]..","..t[12]..","..
+    t[13]..","..t[14]..","..t[15]..","..t[16]..","..t[17]..","..CalcSum(t).."}"
 end
 
-local _csave = {}
+local CSAVE = {}
 
-_csave.Save = function()
+CSAVE.Init = function()
+	local save_str = ""
+	-- Save file does exist:
+	if _FileExists(GetCustomSavePath()) then
+		local file = assert(io.open(GetCustomSavePath(), "r"))
+		local data = file:read("*all")
+		file:close()
+		-- find if there is a save for this level already:
+		local _find = string.find(data, '["'.._mapname..'"]', 1, true)
+		if not _find then
+			save_str = string.sub(data, 1, -13).. 'saves["'.._mapname..'"] = {}\nreturn saves'
+		end
+	-- Save file doesn't exist:
+	else
+		save_str = 'saves = {}\n'..'saves["'.._mapname..'"] = {}\nreturn saves'
+	end
+	-- Write to file:
+	if save_str ~= "" then
+		local file = assert(io.open(GetCustomSavePath(), "w"))
+		file:write(save_str)
+		file:close()
+	end
+end
+
+CSAVE.Complete = function()
+	local save_str = ""
+	local trea = mdl_exe.TreasuresCountTable
+	local all_treasures = trea[0] + trea[1] + trea[2] + trea[3] + trea[4] + trea[5] + trea[6] + trea[7] + trea[8]
+	trea = ffi.cast("int*", tonumber(ffi.cast("int", PData()) + 0x88))
+	local gathered_treasures = trea[0] + trea[1] + trea[2] + trea[3] + trea[4] + trea[5] + trea[6] + trea[7] + trea[8]
+	local checksum = CalcSum2(gathered_treasures, all_treasures)
+	-- Save file does exist:
+	if _FileExists(GetCustomSavePath()) then
+		local file = assert(io.open(GetCustomSavePath(), "r"))
+		local data = file:read("*all")
+		file:close()
+		-- Check if level has been completed befored:
+		local _match = data:match('saves%["'.._mapname..'"%]%[0%] = ([%d%p]+)')
+		-- yes:
+		if _match then
+			local last = tonumber(_match:match'{(%d+),%d+,%d+}')
+			local last_all = tonumber(_match:match'{%d+,(%d+),%d+}')
+			local last_checksum = tonumber(_match:match'{%d+,%d+,(%d+)}')
+			if gathered_treasures > last or CalcSum2(last, last_all) ~= last_checksum then
+				local repl = 'saves["'.._mapname..'"][0] = {'.. gathered_treasures .. "," .. all_treasures .."," .. checksum .. '}'
+				local patt = 'saves%["'.. _mapname ..'"%]%[0%] = {.-}'
+				local s, _ = string.gsub(data, patt, repl)
+				save_str = s
+			end
+		-- no:
+		else
+			save_str = string.sub(data, 1, -13).. 'saves["'.._mapname..'"][0] = {'.. gathered_treasures .. "," .. all_treasures .. "," .. checksum .. '}\nreturn saves'
+		end
+	-- Save file doesn't exist:
+	else
+		save_str = 'saves = {}\nsaves["'.._mapname..'"] = {}\nsaves["'.._mapname..'"][0] = {'.. gathered_treasures .. "," .. all_treasures .. "," .. checksum .. '}\nreturn saves'
+	end
+	-- Write to file:
+	if save_str ~= "" then
+		local file = assert(io.open(GetCustomSavePath(), "w"))
+		file:write(save_str)
+		file:close()
+	end
+end
+
+CSAVE.Save = function()
 
     if GetTime() < 300 then
         -- SuperCheckpoint - jne to je change:
@@ -71,7 +154,7 @@ _csave.Save = function()
             -- if supercheckpoint has been triggered:
             if sp[0] > 0 and sp[0] <= 2 then
                 -- save data:
-                local saveStr = GetCurPlayerStats()
+                local saveStr = GetCurPlayerStatsStr()
                 -- save file does exist:
                 if _FileExists(GetCustomSavePath()) then
                     local file = assert(io.open(GetCustomSavePath(), "r"))
@@ -138,7 +221,7 @@ _csave.Save = function()
     end
 end
 
-_csave.Load = function()
+CSAVE.Load = function()
     if _mappath ~= "" and GetGameType() == GameType.SinglePlayer then -- if custom level and singleplayer
         if sp[0] > 0 then
             if _chameleon[0] == chamStates.LoadingAssets then
@@ -157,10 +240,10 @@ _csave.Load = function()
 					if s[1] >= stl[0] then
 						PrivateCast(0xEB, "char*", 0x49404D) -- jmp on level start to not get extra live
 					end
-					if not CheckSum(s) then
-						_DoOnlyOnce3 = true
-					else
+					if CalcSum(s) == s[18] then
 						_DoOnlyOnce3 = false
+					else
+						_DoOnlyOnce3 = true
 					end
                 end
             end
@@ -216,4 +299,4 @@ _csave.Load = function()
     end
 end
 
-return _csave
+return CSAVE
