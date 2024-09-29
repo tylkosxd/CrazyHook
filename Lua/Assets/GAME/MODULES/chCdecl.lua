@@ -123,7 +123,7 @@ ffi.cdef[[
         int _f_10;
         int Flag;
         int Color;
-        int ColorTable;
+        int* ColorTable;
         int _f_1C;
         int _f_20;
         int _f_24;
@@ -150,10 +150,6 @@ ffi.cdef[[
         int _field_28;
         int _field_2C;
         GraphV* _v;
-        int _field_34;
-        int _field_38;
-        int _field_3C;
-        int _field_40;
     } GraphA;
 ]]
 
@@ -161,7 +157,9 @@ ffi.metatype("GraphA",
     {
 	    __index = function(self, key)
 		    local ok, result = pcall(function()
-		        return self._v[key]
+				if self._v ~= nil then
+					return self._v[key]
+				end
 		    end)
 		    if ok then
 		        return result
@@ -172,7 +170,9 @@ ffi.metatype("GraphA",
 	    end,
 	    __newindex = function(self, key, val)
 		    local ok = pcall(function()
-		        return self._v[key]
+				if self._v ~= nil then
+					return self._v[key]
+				end
 		    end)
 		    if ok then
 				self._v[key] = val
@@ -195,7 +195,10 @@ ffi.cdef[[
 		int _field_8;
 		int _field_C;
 		Logic Logic;
-		struct PData* _p;
+		union {
+			struct PData* _p;
+			int* _d;
+		};
 		int* _userdata;
 		int State;
 		int TimeDelay;
@@ -257,21 +260,21 @@ ffi.cdef[[
 		int _f_134;
 		int _f_138;
 		int _f_13C;
-		int field_140;
-		int field_144;
-		int field_148;
-		int field_14C;
-		int field_150;
-		int field_154;
-		int field_158;
-		int field_15C;
-		int field_160;
-		int field_164;
+		int _f_140;
+		int _f_144;
+		int _f_148;
+		int _f_14C;
+		int _f_150;
+		int _f_154;
+		int _f_158;
+		int _f_15C;
+		int _f_160;
+		int _f_164;
 		const char* TSound;
 	} ObjectV;
 
 	typedef struct ObjectA {
-		void * const _vtable;
+		void * const _vtableA;
 		const int ID;
 		Flags_t Flags;
 		int * const _Game_;
@@ -925,6 +928,9 @@ ffi.cdef[[
 	unsigned int GetDlgItemTextA(int, int, int, int);
 	bool UpdateWindow(int);
 	int MessageBoxA(void *w, const char *txt, const char *cap, int type);
+	int MapWindowPoints(int, int, Rect*, int);
+	int GetParent(int);
+	bool GetClientRect(int, Rect*);
 
     bool GetCursorPos(Point*);
 	int ShowCursor(int);
