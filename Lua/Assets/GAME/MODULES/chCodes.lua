@@ -88,7 +88,7 @@ CODES.List = {
 			if GetInput"Left" and not GetInput"Right" then 
 			    PlayerData().Dir = 0 
 			    claw.DrawFlags.Mirror = true
-                speedX = -Speed
+                speedX = -speed
 		    end
 		    if GetInput"Right" and not GetInput"Left" then 
 			    PlayerData().Dir = 1 
@@ -108,9 +108,15 @@ CODES.List = {
                 speedY = 0
             end
 		    claw.X, claw.Y = claw.X + speedX, claw.Y + speedY
-            if claw.HitTypeFlags ~= 0xB50500 then
-                claw.HitTypeFlags = 0xB50500
+            if claw.HitTypeFlags ~= 0x50500 then
+                claw.HitTypeFlags = 0x50500
             end
+			if claw.PhysicsType ~= 8 then
+				claw.PhysicsType = 8
+			end
+			if claw.State ~= 5008 then
+				claw.State = 5008
+			end
 		end,
 		LevelReset = function()
 			CODES.List.mpfly.Toggle = 0
@@ -191,6 +197,7 @@ CODES.List = {
 		Name = "mpazzar",
 		ID = 773, 
 		Type = 2,
+		Toggle = 0,
 		Text = "HD mode",
 		Enable = function()
 			HD_mode = CreateObject {name="_HD", Width = 864, Height = 486}
@@ -264,7 +271,7 @@ CODES.List = {
 				local dMax = 240
 				local limit = 200
 				local dMaxSq = dMax*dMax
-				local magnetF = 600000
+				local magnetF = 540000
 				if obj.ObjectTypeFlags == 0x40000 then
 					local d = math.sqrt(math.abs(GetClaw().X - obj.X)^2 + math.abs(GetClaw().Y - obj.Y)^2)
 					if d < limit then
@@ -383,7 +390,7 @@ CODES.List = {
 			TextOut("Not all who wander are lost")
 			local pal = GetCurrentPalette()
 			pal[0] = "#505050"
-			pal:InvertColors():AdjustHSL(math.random(0,359), -30, -30):Set()		
+			pal:AdjustHSL(math.random(30,329), 0, 0):Set()
 		end,
 		Disable = function()
 			GetFirstPalette():Set()
@@ -418,6 +425,7 @@ end
 CODES.Activation = function(id)
 	for _, params in pairs(CODES.List) do
 		if params.ID == id then
+		
 			if params.Type == 0 then
 				PlaySound"GAME_MAJORCHEAT"
 			elseif params.Type == 1 then
@@ -430,6 +438,7 @@ CODES.Activation = function(id)
 					PlaySound"GAME_MINORCHEAT"
 				end
 			end
+			
 			if params.Toggle then
 				if params.Toggle == 0 then
 					if type(params.Enable) == "function" then
@@ -448,6 +457,7 @@ CODES.Activation = function(id)
 					end
 					params.Toggle = 0
 				end
+				
 			elseif params.InfosFlags then
 				if InfosDisplay[0][params.InfosFlags] == false then
 					if type(params.Enable) == "function" then
@@ -466,6 +476,7 @@ CODES.Activation = function(id)
 					end
 					InfosDisplay[0][params.InfosFlags] = false
 				end
+				
 			else
 				if type(params.Enable) == "function" then
 					params.Enable()
@@ -502,6 +513,9 @@ CODES.RegisterCustomCheat = function(params)
 			if d.ID == params.ID then
 				error("RegisterCheat - ID " .. params.ID .. " is already taken by " .. d.Name:upper())
 			end
+		end
+		if CODES.List[params.Name] then
+			error("RegisterCheat - Name '" .. params.Name .. "' is already taken!")
 		end
 		for k, v in pairs(_message) do
 			if params.ID == v then
@@ -546,27 +560,8 @@ CODES.Gameplay = function()
 		if params.Toggle == 1 and type(params.Gameplay) == "function" then
 			params.Gameplay()
 		end
-	end	
-end
-
-CODES.Cheats = function(ptr)
-	if _chameleon[0] == chamStates.LoadingStart then    
-        CODES.Registration()
-		InitCheatsOnce = false
 	end
-    if _chameleon[0] == chamStates.LoadingObjects then
-		if not InitCheatsOnce then
-			CODES.Init()
-			InitCheatsOnce = true
-		end
-	end
-	if _chameleon[0] == chamStates.OnPostMessage then
-		local id = tonumber(ffi.cast("int",ptr))
-		CODES.Activation(id)
-	end	
-    if _chameleon[0] == chamStates.Gameplay then
-		CODES.Gameplay()
-	end
+	
 end
 
 return CODES
