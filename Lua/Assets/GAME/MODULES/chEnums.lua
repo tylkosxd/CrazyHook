@@ -39,6 +39,66 @@ Powerup = {
 	Custom 			 = 0x29A
 }
 
+DropItem = {
+	Goldbar = 1,
+	RingRed = 2,
+	RingGreen = 3,
+	RingBlue = 4,
+	RingPurple = 5,
+	Necklace = 6,
+	CrossRed = 7,
+	CrossGreen = 8,
+	CrossBlue = 9,
+	CrossPurple = 10,
+	ScepterRed = 11,
+	ScepterGreen = 12,
+	ScepterBlue = 13,
+	ScepterPurple = 14,
+	GeckoRed = 15,
+	GeckoGreen = 16,
+	GeckoBlue = 17,
+	GeckoPurple = 18,
+	AmmoBigBag = 19,
+	Ammo = 20,
+	AmmoBag = 21,
+	Catnip = 22,
+	Catnip2 = 23,
+	Food = 24,
+	Potion3 = 25,
+	Potion1 = 26,
+	Potion2 = 27,
+	Magic = 28,
+	MagicStar = 29,
+	MagicClaw = 30,
+	EndOfLevel = 31,
+	Warp = 32,
+	Dynamite = 34,
+	AmmoCurse = 35,
+	MagicCurse = 36,
+	HealthCurse = 37,
+	DeathCurse = 38,
+	TreasureCurse = 39,
+	FreezeCurse = 40,
+	ChaliceRed = 41,
+	ChaliceGreen = 42,
+	ChaliceBlue = 43,
+	ChalicePurple = 44,
+	CrownRed = 45,
+	CrownGreen = 46,
+	CrownBlue = 47,
+	CrownPurple = 48,
+	SkullRed = 49,
+	SkullGreen = 50,
+	SkullBlue = 51,
+	SkullPurple = 52,
+	Invisibility = 53,
+	Invulnerability = 54,
+	ExtraLife = 55,
+	FireSword = 56,
+	LightningSword = 57,
+	IceSword = 58
+}
+
 -- This one is outdated, use CollisionFlags instead:
 ObjectType = {
 	Generic		= 1,
@@ -107,8 +167,7 @@ Flags = {
 	Safe            = 4,
 	AutoHitDamage   = 8,
 	OnElevator      = 0x10,
-	Destroy         = 0x10000,
-	Interactable	= 0x40000
+	Destroy         = 0x10000
 }
 
 DrawFlags = {
@@ -174,8 +233,8 @@ CollisionFlags = {
 	Unknown8			= 0x200000,
 	Unknown9			= 0x400000,
 	PistolAmmo          = 0x800000,
-	ArchingProjectile   = 0x1000000,
-	MagicProjectile     = 0x2000000,
+	EnvBullet			= 0x1000000, -- environment bullet
+	MagicBullet			= 0x2000000,
 	Sound               = 0x4000000,
 }
 
