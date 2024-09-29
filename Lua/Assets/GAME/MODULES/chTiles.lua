@@ -28,40 +28,11 @@ local function NewTileLayer(plane, x, y, w, h)
 	return ffi.new("CTileLayer", size, {plane, x, y, w, h, size})
 end
 
-local function MatchSingleTilePattern(str)
-	local pat = str:match"[%d%a]+" 
-	if pat then
-		if tonumber(pat) then
-			return tonumber(pat)
-		else
-			pat = pat:match"(%a)"
-			if pat == "c" then
-				return TILES.Clear
-			elseif pat == "w" then
-				return TILES.Wildcard
-			elseif pat == "f" then
-				return TILES.Color
-			else
-				return
-			end
-		end
-	end
-	return
-end
-
-local function MatchTilesPattern(layer, str, row, column)
-	local keys = {}
-	for key in string.gmatch(str, "/([^/]+)") do
-		table.insert(keys, key)
-	end
-	--UNDER DEVELOPMENT
-end
-
 -- Get tile attributes/properties:
 TILES.GetTileA = function(id)
     if Game(9) > 0 and Game(9,19) > 0 then
-        if not tonumber(id) or id < 0 or not TheTileExists(Game(9,23), id) then
-            error("GetTileA - invalid tile index " .. id)
+        if not tonumber(id) or id < 0 or not TheTileExists(ffi.cast("CPlane*", Game(9,23)), id) then
+            do return end
         else
             local tile = Game(9,19,id)
 	        local tType = CastGet(tile, 0)
@@ -136,6 +107,7 @@ end
 
 -- TileLayer methods:
 
+-- Anchors the layer to the plane:
 TILES.LayerMethods.Anchor = function(layer)
 	local count = 0
 	for m = 0, layer.Height-1 do
@@ -146,6 +118,7 @@ TILES.LayerMethods.Anchor = function(layer)
 	end
 end
 
+-- Returns the copy of the layer:
 TILES.LayerMethods.Clone = function(layer)
 	local clone = NewTileLayer(layer.PRoot, layer.X, layer.Y, layer.Width, layer.Height)
 	for n = 0, clone.ContentSize-1 do
@@ -153,6 +126,8 @@ TILES.LayerMethods.Clone = function(layer)
 	end
 	return clone
 end
+
+-- The below functions are immutable, which means they copy the layer and modify the copy:
 
 TILES.LayerMethods.SetPos = function(layer, x, y)
 	if not y then y = layer.Y end
@@ -259,7 +234,7 @@ TILES.LayerMethods.Map = function(layer, fun, args)
 		end
 		return clone
 	else
-		error("Layer:Map - invalid argument")  
+		error("Layer:MapContent - invalid argument")  
 	end
 end
 
@@ -271,9 +246,6 @@ TILES.LayerMethods.SetContent = function(layer, content)
 				clone.Content[n] = content[n+1]
 			end
 		end
-	elseif type(content) == "string" then
-		-- UNDER DEVELOPMENT
-		MatchTilesPattern(clone, content)
 	end
 	return clone
 end
@@ -283,13 +255,6 @@ TILES.LayerMethods.SetTile = function(layer, content, x, y)
 	if x >= 0 and x < clone.X and y >= 0 and y < clone.Y then
 		if type(content) == "number" then
 			clone.Content[x + y*clone.Width] = content
-		elseif type(content) == "string" then
-			local tile = MatchSingleTilePattern(content)
-			if tile then
-				clone.Content[x + y*clone.Width] = tile
-			else
-				error("Layer:SetTile - couldn't match the argument " .. content)
-			end
 		elseif type(content) == "function" then
 			local params = {
 				LayerX = x,
@@ -315,20 +280,6 @@ TILES.LayerMethods.SetRow = function(layer, content, row)
 					clone.Content[x + row*clone.Width] = content[x+1]
 				end
 			end
-		elseif type(content) == "string" then
-			-- UNDER DEVELOPMENT
-		elseif type(content) == "function" then
-			local params = {}
-			for x = 0, clone.Width-1 do
-				params.LayerX = x
-				params.LayerY = row
-				params.LayerTile = clone.Content[x + row*clone.Width] 
-				params.PlaneX = clone.X + x
-				params.PlaneY = clone.Y + row
-				params.PlaneTile = clone.PRoot.Tiles[clone.X + x + (clone.Y + row)*clone.PRoot.Width]
-				local res = content(params)
-				clone.Content[x + row*clone.Width] = res
-			end
 		end
 		return clone
 	else
@@ -344,20 +295,6 @@ TILES.LayerMethods.SetColumn = function(layer, content, column)
 				if content[y+1] then
 					clone.Content[column + y*clone.Width] = content[y+1]
 				end
-			end
-		elseif type(content) == "string" then
-			-- UNDER DEVELOPMENT
-		elseif type(content) == "function" then
-			local params = {}
-			for y = 0, clone.Height-1 do
-				params.LayerX = column
-				params.LayerY = y
-				params.LayerTile = clone.Content[column + y*clone.Width] 
-				params.PlaneX = clone.X + column
-				params.PlaneY = clone.Y + y
-				params.PlaneTile = clone.PRoot.Tiles[clone.X + column + (clone.Y + y)*clone.PRoot.Width]
-				local res = content(params)
-				clone.Content[column + y*clone.Width] = res
 			end
 		end
 		return clone
