@@ -1,4 +1,4 @@
-_exe = {
+EXE = {
 	_DropMultipleTreasure   = ffi.cast("int (*)(int, int, int, int, int)", 0x40FAA0),
 	_ClawJump               = ffi.cast("void (*)(ObjectA*, int)", 0x41FC40),
 	_KillClaw               = ffi.cast("void (*__cdecl)(ObjectA*, ObjectV*, PData*, int)", 0x418BD0),
@@ -7,6 +7,7 @@ _exe = {
 	_PlaySound              = ffi.cast("int (*__thiscall)(void*, int, int, int, int)", 0x421BB0),
 	_RegisterCheat			= ffi.cast("void (*__thiscall)(int, const char*, int, int)", 0x423E40),
 	_JumpToLevel            = ffi.cast("int (*__thiscall)(int*, int)", 0x429890),
+	_SetPlayArea 			= ffi.cast("void(*__thiscall)(void*, int, int, int)", 0x429BF0),
 	_ChangeResolution       = ffi.cast("int (*__thiscall)(int*, int, int)",0x429D80),
 	_TimeThings             = ffi.cast("int* (*__thiscall)(int**)",0x42C3C0),
 	_TextOut                = ffi.cast("int (*__thiscall)(int, const char*)", 0x42C780),
@@ -58,11 +59,11 @@ _exe = {
     --
     CSavePoint              = ffi.cast("int*", 0x424859),
 	Hwnd                    = ffi.cast("int*", 0x4B8B91),
-	Chameleon               = ffi.cast("int*",0x50BFB5),
-	SkipLogoMovies          = ffi.cast("int*",0x50BFBB),
-	SkipTitleScreen         = ffi.cast("int*",0x50BFBF),
-	TestExit                = ffi.cast("int*",0x50BFD3),
-	IntroSound              = ffi.cast("int*",0x52356C),
+	Chameleon               = ffi.cast("int*", 0x50BFB5),
+	SkipLogoMovies          = ffi.cast("int*", 0x50BFBB),
+	SkipTitleScreen         = ffi.cast("int*", 0x50BFBF),
+	TestExit                = ffi.cast("int*", 0x50BFD3),
+	IntroSound              = ffi.cast("int*", 0x52356C),
     EnableCurses            = ffi.cast("int*", 0x523570),
     DamageFactor            = ffi.cast("float*", 0x524580),
     HealthFactor            = ffi.cast("float*", 0x524584),
@@ -72,12 +73,12 @@ _exe = {
 	CameraX                 = ffi.cast("int*", 0x52A314),
 	CameraY                 = ffi.cast("int*", 0x52A318),
 	SoundVolume             = ffi.cast("int*", 0x530990),
-	CurrentBoss             = ffi.cast("ObjectA**",0x532864),
+	CurrentBoss             = ffi.cast("ObjectA**", 0x532864),
     AquatisData             = ffi.cast("int*", 0x5326FC),
     StartingPoints          = ffi.cast("int*", 0x532C3C),
     MultiMessage            = ffi.cast("int*", 0x532D1C),
-	PowerupTime             = ffi.cast("int*",0x532D30),
-	CurrentPowerup          = ffi.cast("int*",0x532D34),
+	PowerupTime             = ffi.cast("unsigned int*", 0x532D30),
+	CurrentPowerup          = ffi.cast("int*", 0x532D34),
     LastHitTime             = ffi.cast("int*", 0x532D48),
     GameLoadedFromSP        = ffi.cast("int*", 0x534D94),
 	PlayAreaRect            = ffi.cast("Rect*", 0x535840),
@@ -85,11 +86,11 @@ _exe = {
 	Inputs                  = ffi.cast("CControlsMgr**", 0x535918),
 	MsCount                 = ffi.cast("const int*", 0x535928),
 	Cheats                  = ffi.cast("int*", 0x53592C),
-	NoEffects               = ffi.cast("int*",0x535964),
+	NoEffects               = ffi.cast("int*", 0x535964),
 	InfosDisplay            = ffi.cast("InfosFlags_t*", 0x535998),
     LevelBasedData          = {
-		[0] = ffi.cast("LevelBasedData*",0x535FE8), 
-		[1] = ffi.cast("LevelBasedData*",0x5360A8)
+		[0] = ffi.cast("LevelBasedData*", 0x535FE8), 
+		[1] = ffi.cast("LevelBasedData*", 0x5360A8)
 	},
 	mResult                 = ffi.cast("int**", 0x5362A0),
 	Claw                    = ffi.cast("ObjectA**", 0x5365D4),
@@ -107,4 +108,4 @@ _exe = {
     ObjectMaxAction         = ffi.cast("int*", 0x5ACD3C)
 }
 
-return _exe
+return EXE
