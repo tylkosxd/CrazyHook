@@ -1,0 +1,819 @@
+Produced by Monolith Productions, Inc. and Takarajimasha
+
+Updated by Zax37 and cubuspl42 for The Claw Recluse community. 
+Revised in 2024 by TSXD.
+
+Still keeping it alive after 27 years from release!
+
+
+
+So Claw never made it into the 3rd dimension, but he had other interesting adventures...
+
+
+
+For more information about Monolith Productions and Monolith Studios, please contact Time Warner...
+
+
+
+www.captainclaw.net
+www.kapitanpazur.piasta.pl
+www.clawforum.fora.pl
+www.facebook.com/Claw-291516695407/
+www.monolithstudios.com
+www.captainclaw.com
+www.blood.com
+www.lith.com
+www.directengine.com
+
+
+
+Make sure to join our Discord channel - Claw Forum!
+
+
+
+
+
+Creator/Designer
+
+        Garrett Price
+
+
+Game and Level Design
+
+        Bill Vandervoort
+        Chris Hewett
+        Kevin Lambert
+        Matt Wasnick
+
+
+Lead Engineers
+
+        Brian L. Goble
+        John LaCasse
+
+
+Game Engine and Tools
+
+        Brian L. Goble
+
+
+Game Engineers
+
+        Kevin Stephens
+        Greg Kettell
+
+
+Additional Engineering
+
+        Scott Pultz
+        Kevin Lambert
+        Scott Schlegel
+        Bill Brooks
+        Jeremy Blackman
+
+
+Creative Development
+        
+        Paul Renault
+
+
+Art Director
+
+        Garrett Price
+
+
+Artists
+
+        Israel Evans
+        Matt Hayhurst
+        Garrett Price
+        Kevin Kilstrom
+        Brian Waite
+        Leslie Beaber
+
+
+Background Artist
+
+        Geoff Kaimmer
+
+
+Lead Animator
+
+        Emma Vokurka
+
+
+Animator
+
+        Rebecca Bush
+
+
+Character Design
+
+        Matt Hayhurst
+        Israel Evans
+        Garrett Price
+
+
+Producer
+
+        John L. Jack
+
+
+Audio Director
+
+        Daniel Bernstein
+
+
+Music Composition
+
+        Daniel Bernstein
+        Guy Whitmore
+
+
+Audio/Video/ADR
+
+        James Ackley
+
+
+Sound Design
+
+        Cass Thruston
+        James Ackley
+        Guy Whitmore
+        Jason Hall
+        Daniel Bernstein
+
+
+Palette Creation
+
+        Spencer "MrElite" Maiers
+
+
+Marketing
+
+        Jenni Gant
+
+
+Quality Assurance
+
+        Lynne Dayton
+        Rodd Karp
+        Isaac Barry
+        Gary Pope
+        Mike Cody
+
+
+Web Creation and Design
+
+        Spencer Maiers
+        Paul Butterfield
+        Adam Ketola
+        Joel Reiff
+
+
+Cutscene Design and Animation
+
+        Wallace Creative, Inc., Portland, Oregon
+
+            Director Animator
+                    Donald Wallace
+
+            2D Animation
+                    Ken Mundie
+                    James Bradrick
+                    Ed Anderson
+                    Donald Wallace
+
+            Computer Animation and Effects
+                    Peter Campbell Freeman
+
+            Storyboards/Layouts
+                    Ken Mundie
+                    Donald Wallace
+                    Ed Anderson
+
+            Backgrounds
+                    Lonnie Smith
+
+            Digital Ink and Paint
+                    Kelly Rose
+
+            Assistant Animation/Cleanup
+                    Peter Nguyen
+
+            Voice Charting
+                    Sonic Arts
+
+            Title Logo Design
+                    Anderson McConaughy Design
+                    Illustration: Bill McConaughy/Stephanie Sherwood
+
+            Special Thanks To
+                    Steve Herring - Tech Extraordinaire
+                    Mark Forsyth - 3D Amulet Model
+
+
+Featuring the Voice Talent of
+
+        Stephan Weyte as Claw
+        John Armstrong
+        Rick May
+        Rodney Sherwood
+        Brian Goble
+        Jenny Price
+        Toby Gladwell
+        Daniel Bernstein
+        Treena Burton-Bernstein
+        Traci Timmons
+        Louis Lujan
+        And Jason Hall as Red Tail
+
+
+Information Systems--for keeping things running...
+        
+        Jim Totaro
+        Eric Minamoto
+        Peter Thomas
+        Mike Shannon
+
+
+Operations--for keeping us happy...
+
+        Patti Pudinski
+        Lynn Rott
+        Bryan Bouwman
+        Wayne Burns
+
+
+Chief Hand Waver
+
+        John L. Jack
+
+CrazyHook Update
+
+        cubuspl42
+        Zax37
+                
+
+Special Thanks To
+
+        Our alpha and beta testers
+        Gary Kussman
+        Todd Clineschmidt
+        kijanek6
+           
+
+        ...and everyone at Monolith who helped make this game great!
+
+
+
+MONOLITH STUDIOS
+        
+All the interactive media services you need to get the job done right--at one location.
+
+State-of-the-art 3D and 2D art production for a variety of digital and print media needs.
+
+Premiere audio and video services for the interactive media and entertainment industries.
+
+Comprehensive multimedia engineering services using the latest technologies.
+
+Visit our web site at http://www.monolithstudios.com
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+More Special Thanx...
+
+        Late night dinner delivery
+        Fast motorcycles
+        Two words: "my car"
+        Caffeine
+        The Force
+        Seattle weather
+        Loud music
+        The library
+        Captain Bunz
+        PRiMEViL
+        Johnson Controls
+        Burgermaster
+        Newsgroups
+        Loki
+        Frozen food
+        Messiah (aka Jason Hall)
+        Calico Jack
+        Stolen burritos
+        The MAMBA Kings
+        G-Force
+        Racerboy!
+        Scorpio
+        Hologram
+        Lord Vader
+        Hollywood
+        Level Boy
+        Yucker
+        Wood
+	ClawJS
+        DryerLint
+        More caffeine
+        The Emperor
+        The Sonics
+        AC/DC
+        Buddy Ackerman
+        Menu Boy
+        Hey Thlegel!
+        THAT'S AWESOME!
+        Cooooooooooooooool...
+        Haor haor haor and a bottle of Bandicot.
+        My name...
+        Uh... Boyvith?
+        Sup Pultz?
+        How's that Zed buffer algorithm comin along?
+        Ya know?!
+        Hmmmph...
+        Could someone please pass Dussault?
+        Warm OJ rules!
+        Get out of that handicap parking spot... I earned it!
+        If it's not Scottish, IT'S CRAP!
+        So how's the rope coming?
+        Buthst one!
+        NOPE.
+        Well, I'll put it on my todo list...
+        Moser
+        Lanny
+        Um.... well... means NO!
+        Where's the techno!?!
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Mmmmm, hog fat...
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Mmmmm, bacon...
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Mmmmm, open-faced club sand wedge...
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Remember to tip your waiters and waitresses...
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Beware the dark side...
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Play Claw--you'll have more friends!
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Have you tried ClawJS yet?
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Get a life!  Stop watching the credits!
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sitting too close to the TV really is bad for you...
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+...unless you turn it off...
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+A car is not a toy...
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+...unless it's really, really fast and expensive...
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Four out of five people surveyed will believe just about anything...
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+I think that the problem with this video is that it is highly derivative of many popular bands within the genre... Although if viewed on its own merit, it does have a decent groove... But what it has in groove, it lacks in originality... One can't help but be reminded of bands such as Pearl Jam, White Zombie, Suicidal Tendencies, and other bands that bear the mantle of society's alternative rock... One can't help but be reminded of Lori Anderson when she wore curlers... Mheh heh heh... This video speak less to the mind, and more to the sphincter ... In closing, I think Korn would do well to <SMACK-SMACK-SMACK> AAHHHhh!
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+I've been to Greece lately. It's very nice there. Kinda hot though. Have you guys been there?
+
+
+
+
+
+
+
+
+
+
+
+
+Monolith Productions is dedicated to making great games...so be on the lookout for more addictive gameplay from Monolith...
+
+
+
+
+
+
+
+
+
+
+
+
+...or not. Do whatever you desire. Go out. Make friends. You're a free person.
+
+
+
+
+
+
+
+
+
+
+
+Glad you have found this message. I just cannot believe I didn't leave any last time I've been here.
+
+
+
+
+
+
+
+Seems like those random stuff we throw in here and there may have a great impact on the lives of others. 
+
+
+
+
+
+
+Small footprints, written in the stone, left for decades...
+
+
+
+
+
+
+
+
+
+I'll just leave you with that thought. Have a nice day!
+
+
+
+
+
+
+
+
