@@ -1,27 +1,27 @@
 _WwdCustomsStr = 0x50BEE5
-local _SearchFilter = ""
-local _saves = nil
-local _recs = nil
+local SearchFilter = ""
+local SavesData = nil
+local RecsData = nil
 local hdlg = ffi.new("int")
-local LoadButtonState = 1
+local LoadButtonState = 0
+local LoadButton2State = 0
 local _LoadIcon = ffi.cast("int* (*__cdecl)()",0x50731A)
 local _ChangeDir = ffi.cast("int (*__cdecl)(const char*)",0x4F64DE)
-local CustomLevels = {}
-local Months = {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"}
 --local _atoi = ffi.cast("int (*__cdecl)(const char*)", 0x4A5EA6)
 --local f0 = ffi.cast("int (*__thiscall)(int, int)", 0x4CB6B0)
 --local _GetSelectionCount = ffi.cast("int (*__cdecl)(int)", 0x4385A0)
 --local _ReloadListBox = ffi.cast("signed int (*__cdecl)(int)", 0x438484)
 
-local _Items = {
+local CustomLevels = {}
+
+local Months = {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"}
+
+local DlgItems = {
     Title           = -1,
     ButtonPlay      = 1,
     ButtonCancel    = 2,
     ButtonLoad      = 3,
-    LoadTitle       = 0x41,
-    Load1Button     = 0x42,
-    Load2Button     = 0x43,
-    LoadBackButton  = 0x44,
+	ButtonLoad2		= 4,
     CheckBox        = 0x69,
     LevelsCount     = 0xA1,
     LevelIcon       = 0x22B,
@@ -29,10 +29,10 @@ local _Items = {
     RecIcon         = 0x22D,
     SearchBox       = 0x29A,
     ListBox         = 0x3FC,
-    LoadWnd         = 0x3FD,
     Date            = 0x408,
     Author          = 0x409,
     InfoBox         = 0x40A,
+	Status			= 0x40B,
     TextSearch      = 0xFFFF,
 }
 
@@ -48,124 +48,200 @@ local function GetCustomImgsPath()
     return GetClawPath() .. "\\Assets\\STATES\\DIALOGS\\IMAGES\\CUSTOMWORLD\\"
 end
 
-local function _GetLevelName()
+local function GetSelectedLevelName()
     return ffi.string(ffi.cast("const char*", _WwdCustomsStr))
 end
 
-local function PlayLevel()
-    return ffi.C.DialogBoxParamA(nRes(2,3), "CUSTOMWORLD", nRes(1,1), 0x438380, 0) == 1
+local function CalcSum2(name, one, two)
+	local cstr = _GetCStr(name)
+	return one*cstr[0] + two*cstr[#name-1] + cstr[0]*cstr[0] + 729
 end
 
-local function SelectTopIndex()
-    ffi.C.PostMessageA(GetItem(_Items.ListBox), 0x186, 0, 0)
-    ffi.C.PostMessageA(hdlg, 273, 0x103FC, 0)
-end
-
-local function SetIcon(item, image, from_file)
-    if image == "NONE" then
-        ffi.C.PostMessageA(GetItem(item), 0x0170, 0, 0)
-    elseif from_file then
-        ffi.C.PostMessageA(GetItem(item), 0x0170, ffi.C.LoadImageA(0, _GetCStr(GetCustomImgsPath() .. image .. ".ICO"), 1, 0, 0, 0x8030), 0)
+local function FixDate(str)
+	local day_suf = function(day)
+		if tonumber(day) > 3 and tonumber(day) < 21 or tonumber(day) > 23 and tonumber(day) < 31 then
+			day = day .. "th"
+		else
+			if day:sub(-1) == "1" then
+				day = day .. "st"
+			elseif day:sub(-1) == "2" then
+				day = day .. "nd"
+			elseif day:sub(-1) == "3" then
+				day = day .. "rd"
+			end
+		end
+		return day
+	end
+    if str:match"(%d%d:%d%d %d%d%.%d%d%.%d%d%d%d)" then
+        local mon = Months[tonumber(str:sub(10,11))]
+        local day = day_suf(str:sub(7,8))
+        local year = str:sub(-4)
+        return mon.." "..day.." "..year
     else
-        ffi.C.PostMessageA(GetItem(item), 0x0170, ffi.C.LoadIconA( _LoadIcon()[2], image ), 0)
+		local mon = str:match"(%a+)%A"
+		local day = day_suf(str:match"%D(%d+),")
+		local year = str:sub(-4)
+        return mon.." "..day.." "..year
     end
 end
 
-local function SetText(item, text)
-    ffi.C.SetDlgItemTextA(hdlg, item, text)
-end
+CLDIAL = {
+	Width = ffi.cast("short*", 0x5CEF12)[0],
+	Height = ffi.cast("short*", 0x5CEF14)[0]
+}
 
-local function GetText(item, addr)
-    return ffi.C.GetDlgItemTextA(hdlg, item, ffi.cast("int", addr), 64)
-end
-
-local function RunGame(level)
-    snRes(ffi.cast("int", level), 49)
-    ffi.C.PostMessageA(nRes(1,1), 0x111, 0x8005, 0)
-end
-
-function GetItem(item)
+CLDIAL.GetItem = function(item)
     return ffi.C.GetDlgItem(hdlg, item)
 end
 
-local function ShowWindow(wnd)
-    ffi.C.ShowWindow(GetItem(wnd), 1)
+CLDIAL.SelectTopIndex = function()
+    ffi.C.PostMessageA(CLDIAL.GetItem(DlgItems.ListBox), 0x186, 0, 0)
+    ffi.C.PostMessageA(hdlg, 273, 0x103FC, 0)
 end
 
-local function HideWindow(wnd)
-    ffi.C.ShowWindow(GetItem(wnd), 0)
+CLDIAL.SetIcon = function(item, image, from_file)
+    if image == "NONE" then
+        ffi.C.PostMessageA(CLDIAL.GetItem(item), 0x0170, 0, 0)
+    elseif from_file then
+        ffi.C.PostMessageA(CLDIAL.GetItem(item), 0x0170, ffi.C.LoadImageA(0, _GetCStr(GetCustomImgsPath() .. image .. ".ICO"), 1, 0, 0, 0x8030), 0)
+    else
+        ffi.C.PostMessageA(CLDIAL.GetItem(item), 0x0170, ffi.C.LoadIconA(_LoadIcon()[2], image), 0)
+    end
 end
 
-local function EnableWindow(wnd)
-    return ffi.C.EnableWindow(GetItem(wnd), 1)
+CLDIAL.SetText = function(item, text)
+    ffi.C.SetDlgItemTextA(hdlg, item, text)
 end
 
-local function DisableWindow(wnd)
-    return ffi.C.EnableWindow(GetItem(wnd), 0)
+CLDIAL.GetText = function(item, addr)
+    return ffi.C.GetDlgItemTextA(hdlg, item, ffi.cast("int", addr), 64)
 end
 
-local function SetDefaultFont(item)
-    ffi.C.SendMessageA(GetItem(item), 0x30, ffi.C.SendMessageA(GetItem(_Items.Author), 0x31, 0, 0), 0)
+CLDIAL.ShowWindow = function(wnd)
+    ffi.C.ShowWindow(CLDIAL.GetItem(wnd), 1)
 end
 
-local function GetDlgSize()
-	local dlgRect = ffi.new("Rect[1]")
-	ffi.C.GetWindowRect(hdlg, dlgRect)
-	dlgRect[0].Right = dlgRect[0].Right - dlgRect[0].Left
-	dlgRect[0].Bottom = dlgRect[0].Bottom - dlgRect[0].Top
-	return dlgRect
+CLDIAL.HideWindow = function(wnd)
+    ffi.C.ShowWindow(CLDIAL.GetItem(wnd), 0)
 end
 
-local function GetItemSize(item)
+CLDIAL.EnableWindow = function(wnd)
+    return ffi.C.EnableWindow(CLDIAL.GetItem(wnd), 1)
+end
+
+CLDIAL.DisableWindow = function(wnd)
+    return ffi.C.EnableWindow(CLDIAL.GetItem(wnd), 0)
+end
+
+CLDIAL.SetDefaultFont = function(item)
+    ffi.C.SendMessageA(CLDIAL.GetItem(item), 0x30, ffi.C.SendMessageA(CLDIAL.GetItem(DlgItems.Author), 0x31, 0, 0), 0)
+end
+
+CLDIAL.GetDlgItemSize = function(item)
     local itemRect = ffi.new("Rect[1]")
     local dlgRect = ffi.new("Rect[1]")
-    ffi.C.GetWindowRect(GetItem(item), itemRect)
+    ffi.C.GetWindowRect(CLDIAL.GetItem(item), itemRect)
     ffi.C.GetWindowRect(hdlg, dlgRect)
-    local spx, spy = itemRect[0].Left - dlgRect[0].Left, itemRect[0].Top - dlgRect[0].Top
+    local spx, spy = itemRect[0].Left - dlgRect[0].Left - 3, itemRect[0].Top - dlgRect[0].Top - 3
     local w, h = math.abs(itemRect[0].Right - itemRect[0].Left), math.abs(itemRect[0].Bottom - itemRect[0].Top)
     return ffi.new("Rect", {spx, spy, w, h})
 end
 
-local function FixDate(str)
-    if str:match"(%d%d:%d%d %d%d%.%d%d%.%d%d%d%d)" then
-        local mon = Months[tonumber(str:sub(10,11))]
-        local day = str:sub(7,8)
-        local year = str:sub(-4)
-        return mon.." "..day..", "..year
-    else
-        return str
-    end
+CLDIAL.CreateLoad2Button = function()
+	local playButtonRect = CLDIAL.GetDlgItemSize(DlgItems.ButtonPlay)
+	local loadButtonRect = CLDIAL.GetDlgItemSize(DlgItems.ButtonLoad)
+	local x = 2*loadButtonRect.Left - playButtonRect.Left
+	local y = playButtonRect.Top
+	local w = playButtonRect.Right
+	local h = playButtonRect.Bottom
+	ffi.C.CreateWindowExA(4, "BUTTON", "Load SP2", 0x58010000, x, y, w, h, hdlg, DlgItems.ButtonLoad2, 0, 0)
+	CLDIAL.SetDefaultFont(DlgItems.ButtonLoad2)
 end
 
-CLDIAL = {}
+CLDIAL.CreateStatusText = function()
+	local dateRect = CLDIAL.GetDlgItemSize(DlgItems.Date)
+	local authorRect = CLDIAL.GetDlgItemSize(DlgItems.Author)
+	local x = dateRect.Left
+	local y = 2*authorRect.Top - dateRect.Top
+	local w = dateRect.Right
+	local h = dateRect.Bottom
+	ffi.C.CreateWindowExA(4, "STATIC", "Status: Not Played", 0x5002C200, x, y, w, h, hdlg, DlgItems.Status, 0, 0)
+	CLDIAL.SetDefaultFont(DlgItems.Status)
+end
+
+CLDIAL.CreateLevelCounter = function()
+	local dateRect = CLDIAL.GetDlgItemSize(DlgItems.Date)
+	local listboxRect = CLDIAL.GetDlgItemSize(DlgItems.ListBox)
+	local h = dateRect.Bottom
+	local x = listboxRect.Left + listboxRect.Right - 60
+	local y = listboxRect.Top - 5 - h
+	ffi.C.CreateWindowExA(4, "STATIC", "", 0x5002C200, x, y, 65, h, hdlg, DlgItems.LevelsCount, 0, 0)
+	CLDIAL.SetText(DlgItems.LevelsCount, "Levels" .. ffi.C.SendMessageA(CLDIAL.GetItem(DlgItems.ListBox), 0x18B, 0, 0))
+	CLDIAL.SetDefaultFont(DlgItems.LevelsCount)
+end
+
+CLDIAL.CreateRecCheckbox = function()
+	local dateRect = CLDIAL.GetDlgItemSize(DlgItems.Date)
+	local listboxRect = CLDIAL.GetDlgItemSize(DlgItems.ListBox)
+	local w = listboxRect.Right - 70
+	local h = dateRect.Bottom
+	local x = listboxRect.Left
+	local y = listboxRect.Top - 5 - dateRect.Bottom
+	ffi.C.CreateWindowExA(4, "BUTTON", "Showing all levels", 0x50010006, x, y, w, h, hdlg, DlgItems.CheckBox, 0, 0)
+	CLDIAL.SetDefaultFont(DlgItems.CheckBox)
+end
+
+CLDIAL.CreateRecIcon = function()
+	local iconRect = CLDIAL.GetDlgItemSize(DlgItems.GameIcon)
+	local infoboxRect = CLDIAL.GetDlgItemSize(DlgItems.InfoBox)
+	local dateRect = CLDIAL.GetDlgItemSize(DlgItems.Date)
+	local x = infoboxRect.Right - iconRect.Left - 12
+	local y = iconRect.Top + dateRect.Bottom
+	local w, h = iconRect.Right, iconRect.Bottom
+	ffi.C.CreateWindowExA(4, "STATIC", "", 0x50000843, x, y, w, h, hdlg, DlgItems.RecIcon, 0, 0)
+end
+
+CLDIAL.IsSinglePlayerDialog = function()
+	local text = ffi.new("char[64]")
+	CLDIAL.GetText(DlgItems.ButtonPlay, text)
+	return ffi.string(text) == "Play!"
+end
 
 CLDIAL.UpdateListBox = function()
     local state = 0
-    if _recs then
-        state = ffi.C.SendMessageA(GetItem(_Items.CheckBox), 0xF0, 0, 0) -- get checkbox state
+    if RecsData then
+        state = ffi.C.SendMessageA(CLDIAL.GetItem(DlgItems.CheckBox), 0xF0, 0, 0) -- get checkbox state
+		if state == 1 then
+			CLDIAL.SetText(DlgItems.CheckBox, "Showing only recommended")
+		elseif state == 2 then
+			CLDIAL.SetText(DlgItems.CheckBox, "Showing only highly recommended")
+		else
+			CLDIAL.SetText(DlgItems.CheckBox, "Showing all")
+		end
     end
-    ffi.C.SendMessageA(GetItem(_Items.ListBox), 0x184, 0, 0) -- reset content
+    ffi.C.SendMessageA(CLDIAL.GetItem(DlgItems.ListBox), 0x184, 0, 0) -- reset content
     for name, vals in pairs(CustomLevels) do
-        if string.upper(name):match(_SearchFilter) and vals.Rec >= state then
-            ffi.C.SendMessageA(GetItem(_Items.ListBox), 0x180, 0, GetCStrInt(name)) -- add level to the listbox
+        if string.upper(name):match(SearchFilter) and vals.Rec >= state then
+            ffi.C.SendMessageA(CLDIAL.GetItem(DlgItems.ListBox), 0x180, 0, GetCStrInt(name)) -- add level to the listbox
         end
     end
-    SetText(_Items.LevelsCount, "Levels: " .. ffi.C.SendMessageA(GetItem(_Items.ListBox), 0x18B, 0, 0)) -- update level counter
-    SelectTopIndex()
-    if ffi.C.SendMessageA(GetItem(_Items.ListBox), 0x18B, 0, 0) <= 0 then -- if listbox is empty
-		SetIcon(_Items.GameIcon, "NONE")
-		SetIcon(_Items.LevelIcon, "NONE")
-		SetIcon(_Items.RecIcon, "NONE")
-		SetText(_Items.Date, "")
-		SetText(_Items.Author, "")
+	-- update level counter:
+	CLDIAL.SetText(DlgItems.LevelsCount, "Levels: " .. ffi.C.SendMessageA(CLDIAL.GetItem(DlgItems.ListBox), 0x18B, 0, 0))
+    CLDIAL.SelectTopIndex()
+    if ffi.C.SendMessageA(CLDIAL.GetItem(DlgItems.ListBox), 0x18B, 0, 0) <= 0 then -- if listbox is empty
+		CLDIAL.SetIcon(DlgItems.GameIcon, "NONE")
+		CLDIAL.SetIcon(DlgItems.LevelIcon, "NONE")
+		CLDIAL.SetIcon(DlgItems.RecIcon, "NONE")
+		CLDIAL.SetText(DlgItems.Date, "")
+		CLDIAL.SetText(DlgItems.Author, "")
     end
 end
 
 CLDIAL.LoadListBox = function()
-    local lb = GetItem(_Items.ListBox)
+    local lb = CLDIAL.GetItem(DlgItems.ListBox)
     local custompath = GetCustomPath():sub(1,-2)
     if _FileExists(GetCustomPath().."\\_recs.lua") then
-        _recs = require'Custom._recs'
+        RecsData = require'Custom._recs'
     end
     -- open all files and get data from headers:
     if _DirExists(custompath) then
@@ -193,11 +269,12 @@ CLDIAL.LoadListBox = function()
 					    _ChangeDir("..")
 				    end
                     local rec = 0
-                    if _recs then
-                        rec = _recs[name] or 0
+                    if RecsData then
+                        rec = RecsData[name] or 0
                     end
-                    CustomLevels[name] = {Version = gametype, Level = leveln, Author = author, Date = date, Rec = rec} -- add level and info to the internal table
-                    ffi.C.SendMessageA(GetItem(_Items.ListBox), 0x180, 0, GetCStrInt(name)) -- add level to the listbox
+					local size = math.floor(_GetFileSize(custompath .. "\\" .. filename)/1024)
+                    CustomLevels[name] = {Version = gametype, Level = leveln, Author = author, Date = date, Rec = rec, Size = size} -- add level and info to the internal table
+                    ffi.C.SendMessageA(CLDIAL.GetItem(DlgItems.ListBox), 0x180, 0, GetCStrInt(name)) -- add level to the listbox
                 else
                     table.insert(failed, filename)
                 end
@@ -213,8 +290,8 @@ CLDIAL.LoadListBox = function()
             reason = "Unknown" end
             MessageBox("Failed to open " .. num_fails .." " .. str .. ": \n"..table.concat(failed, ", ").."\nPossible reason: "..reason)
         end
-        SetText(_Items.LevelsCount, "Levels: " .. ffi.C.SendMessageA(GetItem(_Items.ListBox), 0x18B, 0, 0))
-        SelectTopIndex()
+        CLDIAL.SetText(DlgItems.LevelsCount, "Levels: " .. ffi.C.SendMessageA(CLDIAL.GetItem(DlgItems.ListBox), 0x18B, 0, 0))
+        CLDIAL.SelectTopIndex()
     end
 end
 
@@ -226,11 +303,13 @@ CLDIAL.CustomLevelWindow = function(ptr)
 	if _chameleon[0] == chamStates.OnPostMessage then
 		if ptr == 333 then
 			mdl_exe._TimeThings(_nResult)
-			--f0(Game(1), Game(1,5))
-			--ffi.cast("int (*)(int)", Game(7,0,0,10))(Game(7,0))
-			if PlayLevel() and _GetLevelName() ~= "" then
-                local custom = GetCustomPath().._GetLevelName()..".WWD"
-				RunGame(custom)
+			if GetSelectedLevelName() ~= "" then
+				if ffi.C.DialogBoxParamA(nRes(2,3), "CUSTOMWORLD", nRes(1,1), 0x438380, 0) == 1 then
+					local custom = GetCustomPath()..GetSelectedLevelName()..".WWD"
+					-- Start the game:
+					snRes(ffi.cast("int", custom), 49)
+					ffi.C.PostMessageA(nRes(1,1), 0x111, 0x8005, 0)
+				end
 			end
 			while ffi.C.ShowCursor(0) >= 0 do end
 		end
@@ -242,153 +321,145 @@ CLDIAL.CustomLevelWindow = function(ptr)
 
         -- Dialog start:
 		if iptr[5] == 0x110 then
+			-- Create new icon:
+			CLDIAL.CreateRecIcon()
+			-- Create new static text, level counter:
+			CLDIAL.CreateLevelCounter()
             -- Set default search text to ".*":
             CLDIAL.LoadListBox()
-            _SearchFilter = ".*"
+            SearchFilter = ".*"
             -- Reset the save point just in case:
-            mdl_exe.CSavePoint[0] = 0
+			if mdl_exe.CSavePoint[0] ~= 0 then
+				mdl_exe.CSavePoint[0] = 0
+			end
             -- if the recommendations module exists:
             if _FileExists(GetCustomPath().."\\_recs.lua") then
-                -- Create CheckBox:
-                ffi.C.CreateWindowExA(4, "BUTTON", "Only recommended", 0x50010006, 10, 51, 140, 20, hdlg, _Items.CheckBox, 0, 0)
-                SetDefaultFont(_Items.CheckBox)
+				CLDIAL.CreateRecCheckbox()
             end
-			-- create saves "tab" if saves file exists:
+			-- if the custom saves file exists:
             if _FileExists(GetClawPath() .. "\\CustomSaves.lua") then
+				-- read the file:
                 local _file = assert(io.open(GetClawPath() .. "\\CustomSaves.lua", "r"))
-                _saves = _file:read("*all")
+                SavesData = _file:read("*all")
                 io.close(_file)
-                LoadButtonState = 1
-                ffi.C.CreateWindowExA(4, "STATIC", "", 0x4002C201, 1, 48, 312, 24, hdlg, _Items.LoadTitle, 0, 0)
-                ffi.C.CreateWindowExA(4, "BUTTON", "Save point 1", 0x40010000, 65, 100, 188, 24, hdlg, _Items.Load1Button, 0, 0)
-                SetDefaultFont(_Items.Load1Button)
-                ffi.C.CreateWindowExA(4, "BUTTON", "Save point 2", 0x40010000, 65, 160, 188, 24, hdlg, _Items.Load2Button, 0, 0)
-                SetDefaultFont(_Items.Load2Button)
-                ffi.C.CreateWindowExA(4, "BUTTON", "Go back", 0x40010000, 65, 220, 188, 24, hdlg, _Items.LoadBackButton, 0, 0)
-                SetDefaultFont(_Items.LoadBackButton)
             else
-                _saves = nil
-                DisableWindow(_Items.ButtonLoad)
-                LoadButtonState = 0
+                SavesData = nil
             end
-            -- Create new icon:
-            ffi.C.CreateWindowExA(4, "STATIC", "", 0x50000843, 320, 308, 24, 25, hdlg, _Items.RecIcon, 0, 0)
-            -- Create new static text:
-            ffi.C.CreateWindowExA(4, "STATIC", "", 0x5002C200, 192, 354, 80, 25, hdlg, _Items.LevelsCount, 0, 0)
-            SetText(_Items.LevelsCount, "Levels: " .. ffi.C.SendMessageA(GetItem(_Items.ListBox), 0x18B, 0, 0))
-            SetDefaultFont(_Items.LevelsCount)
-            -- Focus on the dialog:
+			-- for single player's dialog:
+			if CLDIAL.IsSinglePlayerDialog() then
+				CLDIAL.CreateLoad2Button()
+				CLDIAL.CreateStatusText()
+				CLDIAL.SetText(DlgItems.ButtonLoad, "Load SP1")
+			end
+            -- Focus:
 			ffi.C.SetFocus(hdlg)
 		end
 
         -- Dialog's running:
 		if iptr[5] == 0x111 then
 
-            -- go to loading:
-            if iptr[6] == _Items.ButtonLoad then
-                local mapname = ffi.new("char[128]")
-                if ffi.C.SendMessageA(GetItem(_Items.ListBox), 0x188, 0, 0) >= 0 then -- if current selection
-					ffi.C.SendMessageA(GetItem(_Items.ListBox), 0x189, ffi.C.SendMessageA(GetItem(_Items.ListBox), 0x188, 0, 0), ffi.cast("int", mapname))  -- get name from the current selection
-				end
-                if ffi.string(mapname) ~= "" then
-                    DisableWindow(_Items.ButtonLoad)
-                    LoadButtonState = 0
-                    DisableWindow(_Items.ButtonPlay)
-                    HideWindow(_Items.ListBox)
-                    HideWindow(_Items.CheckBox)
-                    HideWindow(_Items.SearchBox)
-                    HideWindow(_Items.TextSearch)
-                    HideWindow(_Items.LevelsCount)
-                    ShowWindow(_Items.LoadTitle)
-                    SetText(_Items.LoadTitle, ffi.string(mapname))
-                    ShowWindow(_Items.Load1Button)
-                    ShowWindow(_Items.Load2Button)
-                    ShowWindow(_Items.LoadBackButton)
-                end
+            -- Play from save point 1:
+            if iptr[6] == DlgItems.ButtonLoad then
+				mdl_exe.CSavePoint[0] = 1
+				iptr[6] = DlgItems.ButtonPlay
             end
 
-            -- play selected level from SP1:
-            if iptr[6] == _Items.Load1Button then
-                _saves = nil
-                mdl_exe.CSavePoint[0] = 1
-                iptr[6] = _Items.ButtonPlay
-            end
-
-            -- play selected level from SP2:
-            if iptr[6] == _Items.Load2Button then
-                _saves = nil
-                mdl_exe.CSavePoint[0] = 2
-                iptr[6] = _Items.ButtonPlay
-            end
-
-            -- go back from loading to listbox:
-            if iptr[6] == _Items.LoadBackButton then
-                EnableWindow(_Items.ButtonLoad)
-                LoadButtonState = 1
-                EnableWindow(_Items.ButtonPlay)
-                ShowWindow(_Items.ListBox)
-                ShowWindow(_Items.CheckBox)
-                ShowWindow(_Items.SearchBox)
-                ShowWindow(_Items.TextSearch)
-                ShowWindow(_Items.LevelsCount)
-                HideWindow(_Items.LoadTitle)
-                HideWindow(_Items.Load1Button)
-                HideWindow(_Items.Load2Button)
-                HideWindow(_Items.LoadBackButton)
+            -- Play from save point 2:
+            if iptr[6] == DlgItems.ButtonLoad2 then
+				mdl_exe.CSavePoint[0] = 2
+				iptr[6] = DlgItems.ButtonPlay
             end
 
             -- Change the "only rec" button state:
-            if iptr[6] == _Items.CheckBox then
+            if iptr[6] == DlgItems.CheckBox then
                 CLDIAL.UpdateListBox()
             end
 
             -- Start the selected level:
-			if iptr[6] == _Items.ButtonPlay then
-				if ffi.C.SendMessageA(GetItem(_Items.ListBox), 0x188, 0, 0) >= 0 then -- get current selection
-					ffi.C.SendMessageA(GetItem(_Items.ListBox), 0x189, ffi.C.SendMessageA(GetItem(_Items.ListBox), 0x188, 0, 0), _WwdCustomsStr) -- set name from the current selection
+			if iptr[6] == DlgItems.ButtonPlay then
+				SavesData = nil
+				if ffi.C.SendMessageA(CLDIAL.GetItem(DlgItems.ListBox), 0x188, 0, 0) >= 0 then -- get current selection
+					ffi.C.SendMessageA(CLDIAL.GetItem(DlgItems.ListBox), 0x189, ffi.C.SendMessageA(CLDIAL.GetItem(DlgItems.ListBox), 0x188, 0, 0), _WwdCustomsStr) -- set name from the current selection
 				else
+					mdl_exe.CSavePoint[0] = 0
                     ffi.cast("char*",_WwdCustomsStr)[0] = 0
 				end
             end
 
             -- Get info based on selected level in list:
 			if iptr[6] == 0x103FC then
-                if ffi.C.SendMessageA(GetItem(_Items.ListBox), 0x18B, 0, 0) > 0 then -- if listbox is not empty
-					local str = ffi.new("char[128]")
-					ffi.C.SendMessageA(GetItem(_Items.ListBox), 0x189, ffi.C.SendMessageA(GetItem(_Items.ListBox), 0x188, 0, 0), ffi.cast("int",str))  -- get name from the current selection
-                    local info = CustomLevels[ffi.string(str)]
-                    SetIcon(_Items.GameIcon, info.Version)
-                    SetIcon(_Items.LevelIcon, "L"..info.Level)
-		            SetText(_Items.Date, "Created " .. info.Date)
-                    SetText(_Items.Author, "By ".. info.Author)
+                if ffi.C.SendMessageA(CLDIAL.GetItem(DlgItems.ListBox), 0x18B, 0, 0) > 0 then -- if listbox is not empty
+					local level = ffi.new("char[128]")
+					-- Get name and data from the current selection:
+					do
+						local cur_sel = ffi.C.SendMessageA(CLDIAL.GetItem(DlgItems.ListBox), 0x188, 0, 0)
+						ffi.C.SendMessageA(CLDIAL.GetItem(DlgItems.ListBox), 0x189, cur_sel, ffi.cast("int", level)) 
+					end
+                    local info = CustomLevels[ffi.string(level)]
+					-- Set base description:
+					do
+						CLDIAL.SetIcon(DlgItems.GameIcon, info.Version)
+						local ico = "L" .. info.Level
+						CLDIAL.SetIcon(DlgItems.LevelIcon, ico)
+						local info1 = "Created: " .. info.Date .. ", Size: " .. info.Size .. "KB"
+						CLDIAL.SetText(DlgItems.Date, info1)
+						local info2 = "Author: ".. info.Author
+						CLDIAL.SetText(DlgItems.Author, info2)
+					end
+					-- Set REC icon:
                     if info.Rec == 1 then
-                        SetIcon(_Items.RecIcon, "REC", true)
+                        CLDIAL.SetIcon(DlgItems.RecIcon, "REC", true)
                     elseif info.Rec > 1 then
-                        SetIcon(_Items.RecIcon, "REC2", true)
+                        CLDIAL.SetIcon(DlgItems.RecIcon, "REC2", true)
                     else
-                        SetIcon(_Items.RecIcon, "NONE")
+                        CLDIAL.SetIcon(DlgItems.RecIcon, "NONE")
                     end
-                    if _saves then
-                        local _find = string.find(_saves, '["'..ffi.string(str)..'"]', 1, true)
-                        if LoadButtonState == 0 and _find then
-                            EnableWindow(_Items.ButtonLoad)
-                            LoadButtonState = 1
-                        elseif LoadButtonState == 1 and not _find then
-                            DisableWindow(_Items.ButtonLoad)
-                            LoadButtonState = 0
-                        end
-                        if LoadButtonState == 1 then
-                            if string.find(_saves, '["'..ffi.string(str)..'"][1]', 1, true) then
-                                EnableWindow(_Items.Load1Button)
-                            else
-                                DisableWindow(_Items.Load1Button)
-                            end
-                            if string.find(_saves, '["'..ffi.string(str)..'"][2]', 1, true) then
-                                EnableWindow(_Items.Load2Button)
-                            else
-                                DisableWindow(_Items.Load2Button)
-                            end
-                        end
+					-- For single-player dialog:
+                    if SavesData then
+						if CLDIAL.IsSinglePlayerDialog() then
+							-- Update status:
+							local _find = string.find(SavesData, '["'..ffi.string(level)..'"][0] = ', 1, true)
+							if _find then
+								local vals = SavesData:match('saves%["'.. ffi.string(level) ..'"%]%[0%] = {(.-)}')
+								local gath = tonumber(vals:match"(%d+),%d+,%d+")
+								local all = tonumber(vals:match"%d+,(%d+),%d+")
+								if CalcSum2(ffi.string(level), gath, all) == tonumber(vals:match"%d+,%d+,(%d+)") then
+									if all ~= 0 then
+										local perc = math.floor(gath/all*1000)/10
+										CLDIAL.SetText(DlgItems.Status, "Status: Completed " .. perc .. "%")
+									else
+										CLDIAL.SetText(DlgItems.Status, "Status: Completed 100%")
+									end
+								else
+									CLDIAL.SetText(DlgItems.Status, "Status: ???")
+								end
+							else
+								_find = string.find(SavesData, '["'..ffi.string(level)..'"] = ', 1, true)
+								if _find then
+									CLDIAL.SetText(DlgItems.Status, "Status: Played")
+								else
+									CLDIAL.SetText(DlgItems.Status, "Status: Not Played")
+								end
+							end
+							-- Show/hide "Load SP1" button:
+							_find = string.find(SavesData, '["'..ffi.string(level)..'"][1] = {', 1, true)
+							if LoadButtonState == 0 and _find then
+								CLDIAL.EnableWindow(DlgItems.ButtonLoad)
+								LoadButtonState = 1
+							elseif LoadButtonState == 1 and not _find then
+								CLDIAL.DisableWindow(DlgItems.ButtonLoad)
+								LoadButtonState = 0
+							end
+							-- Show/hide "Load SP2" button:
+							_find = string.find(SavesData, '["'..ffi.string(level)..'"][2] = {', 1, true)
+							if LoadButton2State == 0 and _find then
+								CLDIAL.EnableWindow(DlgItems.ButtonLoad2)
+								LoadButton2State = 1
+							elseif LoadButton2State == 1 and not _find then
+								CLDIAL.DisableWindow(DlgItems.ButtonLoad2)
+								LoadButton2State = 0
+							end
+						end
                     end
 				end
             end
@@ -397,10 +468,10 @@ CLDIAL.CustomLevelWindow = function(ptr)
         -- SearchBox change:
 		if iptr[6] == 0x300029A then
 			local text = ffi.new("char[64]")
-            if GetText(_Items.SearchBox, text) >= 1 then
-                _SearchFilter = string.upper(ffi.string(text))
+            if CLDIAL.GetText(DlgItems.SearchBox, text) >= 1 then
+                SearchFilter = string.upper(ffi.string(text))
 			else 
-                _SearchFilter = ".*"
+                SearchFilter = ".*"
 			end
             CLDIAL.UpdateListBox()
 		end	
