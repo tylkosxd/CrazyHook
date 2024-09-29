@@ -403,10 +403,7 @@ function _free()
 	mdl_exe.NoEffects[0] = 0
     _RestoreGamesCode()
 	_DoOnlyOnce = false
-    _env["OnMapLoad"] = nil
-	_env["OnMapLoad2"] = nil
-    _env["OnGameplay"] = nil
-	_env["OnLevelEnd"] = nil
+    _ClearTable(_env)
     _menv = nil
     _ClearTable(private_cast_table)
     _ClearTable(_maplogics)
@@ -419,43 +416,51 @@ function _free()
 	_mappath = ""
     _mapname = ""
 	_fullmapname = ""
+	CScreenPos = nil
 end
 
 -- The menu start hook:
 function _menu()
     mdl_codes.MenuReset()
 	_free()
-	-- Modding API:
-	if _ModdingAPIEnabled then
+	if _PluginsExist then
 		for _, v in pairs(_GameModsTab) do
 			if v["menu"] and type(v["menu"]) == "function" then
 				v["menu"](ptr)
 			end
 		end
 	end
+	CreateObject{x=720,y=100,z=5000,flags=0,image="MENU_CRAZYHOOK",logic="CustomLogic",name="_CrazyHookMenu"}
 end
 
 -- Chameleon:
 function _map(ptr)
 
 	-- Internal modules:
-	mdl_codes.Cheats(ptr)
 	mdl_clwnd.CustomLevelWindow(ptr)
     mdl_cmd.Map(cl_argv)
     mdl_lclock(ptr)
     mdl_cmap.LoadAssets(ptr)
     mdl_cust_save.Load()
 	
-	-- Modding API - external plugins:
-	if _ModdingAPIEnabled then
+	-- Plugins - the modding API:
+	if _PluginsExist then
 		for _, v in pairs(_GameModsTab) do
 			if v["map"] and type(v["map"]) == "function" then
 				v["map"](ptr)
 			end
 		end
 	end
-        
-	-- Map custom logics:
+    
+    -- Initialize custom saves and register cheats:
+	if _chameleon[0] == chamStates.LoadingStart then
+		mdl_codes.Registration()
+		if _mappath ~= "" then 
+			mdl_cust_save.Init()
+		end
+	end
+	
+	-- Load custom logics:
 	if _chameleon[0] == chamStates.LoadingAssets then
 		if _mappath ~= "" then
 			local logicspath = _mappath .. "\\LOGICS"
@@ -466,17 +471,18 @@ function _map(ptr)
 		end
 	end
     
-	-- Map all objects:
 	if _chameleon[0] == chamStates.LoadingObjects then
 		if not _DoOnlyOnce then
 			_DoOnlyOnce = true
-            if _mappath ~= "" and _DirExists(_mappath.."\\LOGICS") then
+            if _mappath ~= "" then
+				-- Execute OnMapLoad function of main.lua file:
 				local fun = _env["OnMapLoad"]
 			    if type(fun) == "function" then 
                     fun()
-                end 
+                end
             end
-			--CreateObject{name="_TestLogic"}
+			-- Initialise codes:
+			mdl_codes.Init()
 		end
         local addr = tonumber(ffi.cast("int", ptr))
         local object = ffi.cast("ObjectA*", addr)
@@ -487,27 +493,36 @@ function _map(ptr)
 			Name = " .. _GetLogicName(_objects[object.ID]) .."\nImage = '".. GetImgStr(object.Image).."', X = " .. object.X .. ", 
 			Y = " .. object.Y .. ", Logic = " .. GetLogicAddr(object) .. ", Name = " .. _GetLogicName(object))
         end ]]
+		-- Map all objects:
 		_objects[object.ID] = object
 		if not _objects_data[addr] then
 			_objects_data[addr] = {}
 		end
-		local init = _env[_GetLogicName(object).."Init"]
-		if type(init) == "function" then
-			init(object)
+		if _mappath ~= "" then
+			-- Remove unobtainable treasures from candies:
+			local l = tonumber(ffi.cast("int", object.Logic))
+			if l == 0x463670 or l == 0x463690 or l == 0x463710 or l == 0x4636B0 or l == 0x4638B0 or l == 0x463820 or l == 0x494E60 then
+				object.Powerup = 0
+				object.UserRect1 = {0,0,0,0}
+				object.UserRect2 = {0,0,0,0}
+			end
+			-- Execute "init" function of the custom logic:
+			local init = _env[_GetLogicName(object).."Init"]
+			if type(init) == "function" then
+				init(object)
+			end
 		end
 	end
 
-	
     if _chameleon[0] == chamStates.LoadingEnd then
+		-- Find the CaptainClawScreenPosition logic:
+		CScreenPos = LoopThroughObjects(function(obj) if obj.Logic == CaptainClawScreenPosition then return obj end end)
+		-- Execute OnMapLoad2 function of main.lua file:
 		if _mappath ~= "" then
-			if not CScreenPos then
-				CScreenPos = LoopThroughObjects(function(obj) if obj.Logic == CaptainClawScreenPosition then return obj end end)
-			end
 			local fun = _env["OnMapLoad2"]
 			if type(fun) == "function" then 
                 fun()
             end
-			RegisterCheat{Name = "mptiesto", ID = 0x8064, Toggle = 0, Text = "Tiesto mode"}
         end
     end
 	
@@ -515,47 +530,45 @@ function _map(ptr)
 		local id = tonumber(ffi.cast("int", ptr))
 		if _mappath ~= "" then
 			if id == _message.ExitLevel or id == _message.LevelEnd or id == _message.MPMOULDER or (id >= 0x809C and id <= 0x80A9) then
+				-- Execute OnLevelEnd function of a main.lua file:
 				local fun = _env["OnLevelEnd"]
 				if type(fun) == "function" then 
 					fun()
 				end
+				-- save a custom level completion:
+				if id == _message.LevelEnd and not CheatsUsed() then
+					mdl_cust_save.Complete()
+				end
+				-- restore the game state:
 				if id ~= _message.ExitLevel then
 					_free()
 				end
 			end
 		end
+		-- resolution change and mpgloomy wrappers:
 		if id == 670 then
 			mdl_exe._ChangeResolution(nRes(), nRes(31), nRes(32))
 		elseif id == 671 then
 			mdl_exe._BnW(nRes(11,11))
+		-- cheats activation:
+		elseif not table.key(_message, id) then
+			mdl_codes.Activation(id)
 		end
 	end
 
 	if _chameleon[0] == chamStates.Gameplay then
         if _mappath ~= "" then
+			-- Custom levels save system:
             mdl_cust_save.Save()
+			-- Execute OnGameplay function of main.lua file:
 			local fun = _env["OnGameplay"]
 			if type(fun) == "function" then
                 fun(tonumber(ffi.cast("int", ptr)))
             end
         end
-		--[[
-		if not tr then
-			tr = GetMainPlane():CreateTileLayer(60, 40, 3, 3):Resize(7,7):Offset(3, 3)
-		end
-		if not xxx and GetInput"Special" then
-			local somefun = function(params) 
-				if params.PlaneTile == -1 then 
-					return 56 
-				end
-			end
-			tr:Offset(math.random(-1, 1), math.random(-1,1), 0xEEEEEEEE):Anchor()
-			xxx = true
-		end
-		if xxx and not GetInput"Special" then
-			xxx = false
-		end
-		]]
+		-- execute codes:
+		mdl_codes.Gameplay()
+		-- codes that use the WinGDI:
 		mdl_dbg_tools.HealthBars(ptr)
 		mdl_dbg_tools.DebugRects(ptr)
 		mdl_dbg_tools.DebugText(ptr)
@@ -796,7 +809,7 @@ function GetTreasuresNb(n)
 	if type(n) == "number" and n >= 0 and n <= 8 then 
         return mdl_exe.TreasuresCountTable[n]
 	else
-		error("GetTreasuresNb - wrong treasure type ".. n)
+		error("GetTreasuresNb - wrong treasure type: ".. n)
     end
 end
 
@@ -806,6 +819,8 @@ function RegisterTreasure(n, nb)
     end
 	if n >= 0 and n <= 8 then 
         mdl_exe.TreasuresCountTable[n] = mdl_exe.TreasuresCountTable[n]+nb
+	else
+		error("RegisterTreasure - wrong treasure type: ".. n)
     end
 end
 
@@ -1128,15 +1143,6 @@ end
 GetImageName = GetImgStr
 
 function ChangeResolution(width, height)
-	local minPlaneWidth = width/64
-	local minPlaneHeight = height/64
-	for i = 0, PlanesCount()-1 do
-		local plane = GetPlane(i)
-		if plane ~= nil and (plane.Width < minPlaneWidth or plane.Height < minPlaneHeight) then
-			MessageBox("Plane with index " .. i .. " is too small for this resolution!")
-			plane.Flags.NoDraw = true
-		end
-	end
 	snRes(width, 31)
 	snRes(height, 32)
 	ffi.C.PostMessageA(nRes(1,1), 0x111, 670, 0)
@@ -1182,20 +1188,6 @@ function SetImgColor(img, color)
     else
         error("SetImgColor - invalid image")
     end
-    --[[ -- reverse-engineered:
-    if object.Image ~= nil then
-        assert(type(color) == "number")
-        local img = ffi.cast("int*", object.Image)
-        local frame = img[25] -- the first frame
-        local lastFrame = img[26]
-        while frame < lastFrame do
-            if CastGet(img, 5, frame) ~= 0 then
-                CastSet(color, img, 5, frame, 12, 6)
-            end
-            frame = frame+1
-        end
-    end
-    ]]
 end
 
 function SetImgCLT(img, clt)
@@ -1405,8 +1397,9 @@ function _objectA:SetImage(name)
 	mdl_exe._SetImage(self, name)
 end
 
-function _objectA:SetAnimation(name)
-	mdl_exe._SetAnimation(self, name, 0)
+function _objectA:SetAnimation(name, n)
+	if not n then n = 0 end
+	mdl_exe._SetAnimation(self, name, n)
 end
 
 function _objectA:SetFrame(nb)
@@ -1572,7 +1565,7 @@ function _tileLayer:Merge(second_layer, fill)
 	return mdl_tiles.LayerMethods.Merge(self, second_layer, fill)
 end
 
-function _tileLayer:Map(fun, args)
+function _tileLayer:MapContent(fun, args)
 	return mdl_tiles.LayerMethods.Map(self, fun, args)
 end
 
@@ -1654,30 +1647,30 @@ mdl_cmd.Execute(cl_argv)
 
 --------------------------------------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------------------------
-------------------------------------------------------- [[[[ Modding API ]]]] --------------------------------------------------------
+--------------------------------------------------------- [[[[ Plugins ]]]] ----------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------------------------
-local _LoadModsOnce = false
-local _ModdingAPIEnabled = false
+local _LoadPluginsOnce = false
+local _PluginsExist = false
 _GameModsTab = {}
 
-if not _LoadModsOnce and _DirExists(GetClawPath() .. "\\Mods") then
-	local path = GetClawPath() .. "\\Mods"
+if not _LoadPluginsOnce and _DirExists(GetClawPath() .. "\\Plugins") then
+	local path = GetClawPath() .. "\\Plugins"
 	for filename in lfs.dir(path) do
 		if filename:lower():sub(-4) == ".lua" then
 			local modName = filename:sub(1,-5)
-			_GameModsTab[modName] = require("Mods."..modName)
+			_GameModsTab[modName] = require("Plugins."..modName)
 			if _GameModsTab[modName] ~= nil then
-				_ModdingAPIEnabled = true
+				_PluginsExist = true
 			end
 		end
 	end
-	_LoadModsOnce = true
+	_LoadPluginsOnce = true
 end
 
 --------------------------------------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------------------------
-------------------------------------------------------- [[[[ Ground ZERO ]]]] --------------------------------------------------------
+------------------------------------------------------- [[[[ Ground Zero ]]]] --------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------------------------
 
@@ -1686,7 +1679,7 @@ end
 -- Super ammo mode:
 --PrivateCast(0x50, "char*", 0x43FA32)
 
---[[
+
 local function TNTFix(b)
     local noper = ffi.cast("char*", 0x41D53D)
     local noperb = ffi.cast("char*", 0x41D538)
@@ -1702,7 +1695,6 @@ local function TNTFix(b)
 	    noperb[2] = 0x27
     end
 end
-]]
 
 --------------------------------------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------------------------
@@ -1767,8 +1759,8 @@ end
     GooVent(ObjectA*)
     Laser(ObjectA*)
     Crate(ObjectA*)
-    FrontStackedCrate(ObjectA*)
-    BackStackedCrate(ObjectA*)
+    FrontStackedCrates(ObjectA*)
+    BackStackedCrates(ObjectA*)
     AniRope(ObjectA*)
     Dynamite(ObjectA*)
     BreakPlank(ObjectA*)
