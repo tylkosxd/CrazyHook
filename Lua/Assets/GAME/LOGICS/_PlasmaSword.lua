@@ -1,7 +1,7 @@
 
 function main(self)
 	if self.State == 0 then
-        self.AttackTypeFlags = 2
+        self.AttackFlags.Player = true
         self.AttackRect = {-28, -36, 27, 27}
 		self:SetImage"GAME_POWERUPS_NEWPLASMASWORD"
 		self:SetAnimation"GAME_CYCLE50"
@@ -12,7 +12,8 @@ function main(self)
 			self.Smarts = self.Smarts / 1000
 		end
         self.State = 5
-    elseif self.State == 5 then
+	end
+    if self.State == 5 then
         self:AnimationStep()
 	end
 end
