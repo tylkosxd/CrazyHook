@@ -16,13 +16,3 @@ related to file systems offered by the standard Lua distribution.
 
 LuaFileSystem offers a portable way to access the underlying directory structure and file attributes.
 LuaFileSystem is free software and uses the same license as Lua 5.x (MIT).
-
-# LuaRocks Installation
-
-```
-luarocks install luafilesystem
-```
-
-# Documentation
-
-Please check the documentation at doc/us/ for more information.
