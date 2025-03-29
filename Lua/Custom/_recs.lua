@@ -192,6 +192,7 @@ recs["The Sky v1.1"] = 2
 recs["Wooden Castle"] = 1
 recs["Halls of Lavafalls and Fireballs"] = 2
 recs["Tajemnicza Dzungla"] = 2
+recs["Tajemnicza Dżungla"] = 2
 recs["RocaEscape"] = 1
 recs["Secret Place"] = 2
 recs["Pyramyde"] = 1
@@ -309,6 +310,7 @@ recs["Blackbeard's Cove"] = 2
 -- 2018
 recs["Run of the Tiger"] = 1
 recs["Nowy Dzien"] = 2
+recs["Nowy Dzień"] = 2
 recs["Poszukiwanie Amuletu"] = 2
 recs["Forest of Hidden Treasures"] = 2
 recs["The Nest of Pirates"] = 1
@@ -415,6 +417,17 @@ recs["Ring of Fire"] = 2
 recs["Lava Factory"] = 2
 recs["Just Some PegLegs"] = 1
 recs["ClawoPiano"] = 2
-reca["Pina Colada"] = 2
+recs["Pina Colada"] = 2
+recs["A Little Bit Off"] = 2
+recs["Orinoco Flow"] = 2
+recs["Hellish Halls"] = 2
+recs["Crab Rave"] = 2
+-- 2025
+recs["Kaizo Roca"] = 1
+recs["Kaizo Footpath"] = 1
+recs["Kaizo Woods"] = 1
+recs["Decisive Timberlands"] = 2
+recs["Welcome to the Jungle"] = 2
+recs["Blood Ravine (Kaizo Cliffs)"] = 1
 
 return recs
