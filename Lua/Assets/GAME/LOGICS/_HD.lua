@@ -1,3 +1,4 @@
+
 function main(self)
 
 	local PLAY_AREA = mdl_exe.PlayAreaRect[0]
@@ -7,19 +8,19 @@ function main(self)
 		self.normalWidth, self.normalHeight = nRes(31), nRes(32)
         PrivateCast(1, "char*", 0x429BAF) -- lock + key 
         PrivateCast(10, "char*", 0x429B6F) -- lock - key
-		do
-			self.planes = {}
-			local minPlaneWidth = self.Width/64
-			local minPlaneHeight = self.Height/64
-			for i = 0, PlanesCount()-1 do
-				local plane = GetPlane(i)
-				if plane ~= nil and plane.Flags.NoDraw ~= true and (plane.Width < minPlaneWidth or plane.Height < minPlaneHeight) then
-					table.insert(self.planes, plane)
-					plane.Flags.NoDraw = true
-					MessageBox("Plane with index " .. i .. " is too small for this resolution!\nThe plane's visibility has been disabled")
-				end
+		
+		self.planes = {}
+		local minPlaneWidth = self.Width/64
+		local minPlaneHeight = self.Height/64
+		for i = 0, PlanesCount()-1 do
+			local plane = GetPlane(i)
+			if plane ~= nil and plane.Flags.NoDraw ~= true and (plane.Width < minPlaneWidth or plane.Height < minPlaneHeight) then
+				table.insert(self.planes, plane)
+				plane.Flags.NoDraw = true
+				MessageBox("Plane with index " .. i .. " is too small for this resolution!\nThe plane's visibility has been disabled")
 			end
 		end
+		
 		self.State = 2
 	end
 
